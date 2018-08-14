@@ -6,6 +6,7 @@ mastodonメモ
 ＜よく見るフォルダ＞
 nginxのコンフィグ
 vim /etc/nginx/conf.d/https.conf
+  nginx再起動 # sudo nginx -s reload
 
 CentOSエラーログ
 cd /var/spool/mail
@@ -15,9 +16,6 @@ cd /home/mastodon/live/public
 
 mastodonのホーム
 cd /home/mastodon/live
-
-nginxのコンフィグ
-/etc/nginx/nginx.conf
 
 フォルダ以下の容量
 du -h -d 1 live/public/system/
@@ -30,7 +28,18 @@ RAILS_ENV=production bundle exec rake mastodon:media:remove_remote
 mastodon/live配下で
 RAILS_ENV=production bundle exec rake mastodon:media:redownload_avatars
 
+管理者化
+RAILS_ENV=production bundle exec rails mastodon:make_admin USERNAME=<ユーザID>
+権限の剥奪（一般ユーザ化）
+RAILS_ENV=production bundle exec rails mastodon:revoke_staff USERNAME=<ユーザID>
 
+mastodonサービスの制御
+起動
+systemctl start mastodon*
+停止
+systemctl stop mastodon*
+再起動
+systemctl restart mastodon*
 
 amazon s3/wasabi バケットの手動同期
 aws s3 sync public/system/ s3://[バケット名]/ --endpoint-url=https://s3.wasabisys.com
@@ -186,29 +195,43 @@ Your public key has been saved in /root/.ssh/id_rsa.pub.
 　　※ファイルは消したほうがいいって話だけど、TeraTermなどからログインするのに必要なので。
 
 7.公開鍵を設定する
-　→さくらのクラウドに戻って、6で作成した公開鍵を設定する。
-　　エディタでid_rsa.pubを開いて、全てをコピペする。
-　→秘密鍵はダウンロードして、わかりやすいフォルダに保存しておく。
+　→さくらのクラウドに戻って、リソースマネージャー→公開鍵で、識別キーを追加する。
+　　1)追加を選択
+　　2)公開鍵に /root/.ssh/id_rsa.の内容 ssh-rsaで始まるキーを全てコピペする。
+　→さくらのクラウドに戻って、リソースマネージャー→公開鍵で、公開鍵を追加する。
+　　1)生成を選択
+　　2)パスフレーズは6で設定したパスフレーズを入力。
+　→秘密鍵（証明書）はダウンロードして、わかりやすいフォルダに保存しておく。
 
 8.APIキーを作成する
 　7の設定が上手くいくとAPIキーが作成できるので、作成する。
-　名前はわかりやすいものをつけておくほうがよい。
+　ホームに戻り、APIキーを選択。追加から。
+　名前はわかりやすいものをつけておくほうがよい。他はいじらなくていい。
+　アクセストークンとトークンシークレットは控えておく。
 
-9.サーバを作成する
-　ここから課金が発生する。（料金は日割り計算）
-　mastodonを利用させる規模に応じてプランを選択する。（あとで増設することもできる）
+9.ディスクを作成する
+　ディスク容量を選択。
+　アーカイブ：CentOS 7.5を選択
+　名前は分かりやすいものをつける。
+　あとでディスク修正するので他は適当でも。
 
-　アーカイブ：CentOS 7.4を選択
+10.サーバを作成する
+　ディスクはマイディスクで9で作ったディスクを選択
 　管理ユーザのパスワード：rootのパスワード
 　SSD：必要に応じて。
 　メモリ：必要に応じて。
+
+　ディスクを修正
+　管理ユーザのパスワード：rootのパスワード
+　ホスト：ホスト名
 　スタートアップスクリプト：mastodonを選択
 　APIキー：8で作成したキーを選択する
 
+　すぐに起動をチェックして、作成。
 　ステータス上は「完了」と出るが、これはサーバの作成のこと。
 　mastodonの作成はかなり時間がかかるので、時間を置くこと。（2時間くらい見ておいたほうが無難）
 
-10.mastodonの設定をする
+11.mastodonの設定をする
 　Webブラウザで「https://＜ドメイン＞/」にアクセスする。
 　mastodonのログインページがでたらOK。
 　でなかったらまだmastodon作成中なので、時間を置いて待つ。
@@ -248,6 +271,7 @@ $ cd /usr/local/src
 $ hg clone https://bitbucket.org/vim-mirror/vim vim
 
 vimのインストール
+$ cd vim
 $ sudo ./configure --with-features=huge --enable-multibyte --disable-selinux
 $ sudo make
 $ sudo make install
@@ -351,6 +375,7 @@ https://wasabi.com/pricing/
 
 9.古いキャッシュを掃除しておく。
 　# su - mastodon
+　$ cd live
 　$ RAILS_ENV=production bundle exec rake mastodon:media:remove_remote
 　$ exit
 
@@ -358,45 +383,43 @@ https://wasabi.com/pricing/
 　# aws s3 sync public/system/ s3://【バケツ名】/ --endpoint-url=https://s3.wasabisys.com
 
 11.nginxにキャッシュ用のプロクシサーバ（wasabiの仮想サーバ）を設定する。
-　# vim /etc/nginx/nginx.conf
+　# vim /etc/nginx/conf.d/https.conf
 
 　http層の中にまるまるコピー。バケツ名は各自で。
 
-    proxy_cache_path /tmp/nginx_mstdn_media levels=1:2 keys_zone=mastodon_media:100m max_size=1g inactive=24h;
+proxy_cache_path /tmp/nginx_mstdn_media levels=1:2 keys_zone=【バケツ名】:100m max_size=1g inactive=24h;
 
-    server {
-        listen 80;
-        listen [::]:80;
-        server_name media.mstdn.io;
-        return 301 https://media.mstdn.io$request_uri;
-        access_log /dev/null;
-        error_log /dev/null;
+server {
+    listen 80;
+    listen [::]:80;
+    server_name media.mstdn.io;
+    return 301 https://media.mstdn.io$request_uri;
+    access_log /dev/null;
+    error_log /dev/null;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name media.mstdn.io;
+
+    access_log /var/log/nginx/mstdn-media-access.log;
+    error_log /var/log/nginx/mstdn-media-error.log;
+
+    location / {
+            proxy_cache 【バケツ名】;
+            proxy_cache_revalidate on;
+            proxy_buffering on;
+            proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+            proxy_cache_background_update on;
+            proxy_cache_lock on;
+            proxy_cache_valid 1d;
+            proxy_cache_valid 404 1h;
+            proxy_ignore_headers Cache-Control;
+            add_header X-Cached $upstream_cache_status;
+            proxy_pass https://s3.wasabisys.com/;
     }
-
-    server {
-        listen 443 ssl http2;
-        listen [::]:443 ssl http2;
-        server_name media.mstdn.io;
-
-        access_log /var/log/nginx/mstdn-media-access.log;
-        error_log /var/log/nginx/mstdn-media-error.log;
-
-        # Add your certificate and HTTPS stuff here
-
-        location / {
-                proxy_cache 【バケツ名】;
-                proxy_cache_revalidate on;
-                proxy_buffering on;
-                proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
-                proxy_cache_background_update on;
-                proxy_cache_lock on;
-                proxy_cache_valid 1d;
-                proxy_cache_valid 404 1h;
-                proxy_ignore_headers Cache-Control;
-                add_header X-Cached $upstream_cache_status;
-                proxy_pass https://s3.wasabisys.com/;
-        }
-    }
+}
 
 13.nginxを再起動する。
 　# sudo nginx -s reload
@@ -435,7 +458,7 @@ HTTP/2 200
 TeraTermからでもいいけど、dosのプロンプトからのがやりやすいかも。
 
 root@<ホストアドレス>
-秘密鍵のパスフレーズ
+管理者のパスワード
 
 
 -----------------------
@@ -447,6 +470,113 @@ WinScapに秘密鍵ファイルを認識させる
 
 ユーザ：root
 ホスト：ホストアドレス
-パスフレーズ：秘密鍵のパスフレーズ
+パスフレーズ：管理者のパスワード
+
+
+-----------------------
+＜mastodonインスタンス爆破→再建＞
+mastodonインスタンスを一回潰して、同じ手順で再開するときの動作要綱について。
+
+結論として、同じドメイン、同じアカウントでの復活は可能。
+ただし、接続している他のインスタンスのキューが蓄積したり、エラーがでるので、影響のあることを念頭に入れること。
+こちらのsidekiqには待機キューが大量に蓄積するのが見えるはず。
+おそらくはインスタンス間でなんらかの同期処理をやってると思われる。
+
+sidekiqのログとか理解してないので詳しくは不明だが。
+・同じドメイン名、アカウント名でインスタンス立て直すと、sidekiqの（連合TLのトゥート）が大量に蓄積する。
+・蓄積したキュー消しても再度蓄積していく。
+・キューが蓄積してる間は、トゥート、フォローなどはできない。
+・連合の接続はそのまま残ってた。
+
+
+
+-----------------------
+＜mastodonインスタンスの閉じ方（提案）＞
+参考記事これ：
+https://qiita.com/kumasun/items/7aa50a7b1b6d90e322fc
+
+1.1～3でnginxでHTTPステータスコード：410を吐かせる。
+  sidekiqのアクセスを止めさせる効果があるとか。
+　# vim /etc/nginx/conf.d/https.conf
+
+location / {
+    root /home/mastodon/live/public;
+    return 410;
+}
+※他と被らないよう注意すること。
+
+2.nginxを再起動する。
+　# sudo nginx -s reload
+
+3.mastodonでログインする。
+  # su - mastodon
+  # cd /home/mastodon/live
+
+4.Railsコンソールを起動する。
+  $ bundle exec rails console -e production
+
+5.ローカルユーザを全てサスペンド（停止）する。
+  > Account.where(domain: nil).partitioned.find_each do |account|
+  >   printf "%s をサスペンドしています...\n", account.username
+  >   SuspendAccountService.new.call(account)
+  >   account.destroy()
+  > end; 0
+
+Scoped order is ignored, it's forced to be batch order.
+がでればOK。
+
+6.exitでコンソールを抜ける。
+  sidekiqのキューが溜まると思うので7への操作は間を置くこと。
+  ※確認ができない
+
+7.リモートインスタンスから自分のアカウントの存在を消す。
+  $ RAILS_ENV=production bundle exec rake mastodon:maintenance:purge_removed_accounts
+
+以上で鯖を閉じられると思う。
+
+
+-----------------------
+＜用語＞
+mastodon：ますとどん
+ドイツのIT技術者オイゲン・ロチコ氏 (Eugen Rochko)が開発した、SNSサービスソフトウェア。
+フリーソフトウェアであり、Linuxのクラウドサーバがあれば誰でも使用できる。
+ストリームタイムライン機能を持ち、自分や他のユーザが投稿内容がリアルタイムに流れる。
+twitterと違うのは、企業個人問わず誰でもmastodonサーバ（インスタンス）を建てられる点で、複数のインスタンスが存在する。
+そのため、1つのインスタンスに問題があっても、他のインスタンスでmastodonの利用を続けることができる。
+（アカウントはインスタンスごとに登録する必要がある）
+有志でmastodon APIも提供されており、mastodonで動くアプリケーションや、mastodonのクライアントも開発できる。
+
+mastodonが動く仕組み（lucida個人見解）
+あんまよく理解してないです。
+sidekiqがユーザやブラウザからのuriを実行し、Redisがsqlを中継、データの管理をpostgreSQLでおこなう。
+dockerを使うかは任意で、使うとコマンドの記述を短縮化できるが、実際はリソースを食うらしい。
+
+postgreSQL
+オープンソースのデータベースのひとつ。
+SQLで問い合わせできる。
+
+sidekiq
+Linuxで動作する非同期実行gem（カーネル）。
+バックエンドにはRailsが必要。
+
+Redis：Remote dictionary server
+メモリ上にKey-Valueストア(KVS)を構築することができるソフトウェアの一つ。
+KVSは任意の保存したいデータ(値：value)に対し、対応する一意の標識(キー：key)を設定し、
+これらをペアで保存するデータベースの一種で。Redisはコンピュータのメインメモリ上にKVSを構築し、
+外部のプログラムからデータの保存と読み出しができる。
+
+Rails：Ruby on Rails：
+スクリプト言語のRubyにより構築された、Webアプリケーション開発のためのフレームワーク。
+MVC（Model-View-Controller）アーキテクチャをサポートしており、データベースに関する処理を担うモデル、
+データの表示を行うビュー、それらを制御するコントローラの雛形を自動生成する機能を持っている。
+データの作成・読み込み・更新・削除(CRUD)のみを行うような単純なWebアプリケーションであれば、
+データテーブルの作成と雛形の自動生成を行うのみでほとんどの部分が開発できてしまう。
+Webアプリケーションの多くはCRUD処理を中核としているので、Ruby on Railsを使うことによって多くのコード
+の作成を自動化することができ、開発期間を短縮できる。
+
+docker
+コンテナ型の仮想化環境を提供するオープンソースソフトウェア。
+アプリケーションを少ない資源で効率よく実行できる。
+
 
 

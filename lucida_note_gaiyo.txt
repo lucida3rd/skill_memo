@@ -1,0 +1,53 @@
+Lucida-Note概要
+-----------------------------------
+◆インスタンスの説明文
+
+一人鯖「Lucida-Note」です。<br />
+一般の方の新規登録を受け付ける予定はないです。<br />
+<hr />
+
+トゥートする内容はだいたいアカウント別に分かれてます。<br />
+本垢(管理)：<a target="_blank" href="https://lucida-note.info/@lucida3rd">lucida3rd</a><br />
+
+日常垢：<a target="_blank" href="https://lucida-note.info/@lucida3pai">lucida3pai</a><br />
+
+ゲーム垢：<a target="_blank" href="https://lucida-note.info/@lucida3dei">lucida3dei</a><br />
+
+bot垢(自動)：<a target="_blank" href="https://lucida-note.info/@lucida3bot">lucida3bot</a><br />
+
+<hr />
+その他の外部アカウント<br />
+JP鯖(予備)：<a target="_blank" href="https://mstdn.jp/@lucida3yobi">lucida3yobi@mstdn.jp</a><br />
+
+twitter：<a target="_blank" href="https://twitter.com/lucida_twt">@lucida_twt</a><br />
+
+github：<a target="_blank" href="https://github.com/lucida3rd">lucida3rd</a><br />
+
+
+
+-----------------------------------
+◆カスタム詳細説明
+
+＜Server Information＞<br />
+リージョン：さくらインターネット<br />
+サーバ：Iaas（スペック不明）<br />
+OS：CentOS 7.5<br />
+CPU：1Core（スペック不明）<br />
+メモリ：3GB（スペック不明）<br />
+SSD：20GB（スペック不明）<br />
+ネット帯域幅：100Mbps<br />
+<br />
+webサーバ：nginx<br />
+<hr />
+
+＜Mastodon Information＞<br />
+バージョン：	v2.4.3	<br />
+
+docker：non-docker<br />
+データベース：postgreSQL<br />
+メディアストレージ：wasabi<br />
+
+<hr />
+＜History＞<br />
+2018/8/11 インスタンス再開（v2.4.3）<br />
+
