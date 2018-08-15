@@ -529,10 +529,20 @@ Scoped order is ignored, it's forced to be batch order.
   sidekiqのキューが溜まると思うので7への操作は間を置くこと。
   ※確認ができない
 
-7.リモートインスタンスから自分のアカウントの存在を消す。
-  $ RAILS_ENV=production bundle exec rake mastodon:maintenance:purge_removed_accounts
-
 以上で鯖を閉じられると思う。
+
+
+-----------------------
+＜削除されたリモートアカウントを自分のdbから削除する＞
+垢削除されたり、インスタンスを閉じられて停止されたアカウントを自分のdbから削除する。
+
+1.mastodonでログインする。
+  # su - mastodon
+  # cd /home/mastodon/live
+
+2.リモートインスタンスから自分のアカウントの存在を消す。
+  $ RAILS_ENV=production bundle exec rake mastodon:maintenance:purge_removed_accounts -f
+  後ろの-fはオプションで、削除問い合わせをなくす。
 
 
 -----------------------
