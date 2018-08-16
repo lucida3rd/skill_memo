@@ -1,11 +1,11 @@
 ---------------------------------
   るしぼっと改2 動作仕様
-    lastupdate：　2018/7/26
+    lastupdate：　2018/8/16
 ---------------------------------
-bot：るしぼっと改（lucida3bot@lucida-note.info）
+bot：るしぼっと改（lucida3bot@lucida-don.net）
 　　 twitter：https://twitter.com/lucida_bot
 
-制作者：Lucida（lucida3rd@lucida-note.info）
+制作者：Lucida（lucida3rd@lucida-don.net）
 設計仕様(github)：https://github.com/lucida3rd/lucibot2
 
 

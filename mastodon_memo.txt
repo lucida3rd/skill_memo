@@ -75,6 +75,12 @@ free
 メモリに特化して詳細を表示
 　Mem行のfree列の値は 何の用途にも使っていない物理メモリ量
 
+cat /proc/meminfo
+メモリの詳細がわかる。
+
+dmidecode --type memory
+dmidecode --type memory | grep Size
+実装されている物理メモリの詳細。
 
 
 -----------------------
@@ -132,8 +138,6 @@ exit
 systemctl restart mastodon*
 
 
-
-
 -----------------------
 ＜mastodonの連合TL仕様（個人見解＞
 自分のインスタンス上からの見た目で、連合TLに表示されるトゥートは以下の通り。
@@ -185,19 +189,21 @@ https://knowledge.sakura.ad.jp/8591/
 6.公開鍵を作成する
 　1)DOSプロンプトを開く
 　2)ssh-keygen -t rsa
-　3)鍵の出力パスが設定できる。変更しないならそのままenter。
+　3)鍵の出力パス、ファイルが設定できる。変更しないならそのままenter。
 　　デフォルトの出力先は、
 　　<ユーザディレクトリ>\.ssh
+    ※複数鍵を作る場合はここでファイル分けしておく
 　4)パスフレーズを設定しenter。（2回）
 　　以下のように出力されれば成功。
 Your identification has been saved in /root/.ssh/id_rsa.
 Your public key has been saved in /root/.ssh/id_rsa.pub.
 　　※ファイルは消したほうがいいって話だけど、TeraTermなどからログインするのに必要なので。
+    参考情報：https://qiita.com/0084ken/items/2e4e9ae44ec5e01328f1
 
 7.公開鍵を設定する
 　→さくらのクラウドに戻って、リソースマネージャー→公開鍵で、識別キーを追加する。
 　　1)追加を選択
-　　2)公開鍵に /root/.ssh/id_rsa.の内容 ssh-rsaで始まるキーを全てコピペする。
+　　2)公開鍵に /root/.ssh/id_rsa.pubの内容 ssh-rsaで始まるキーを全てコピペする。
 　→さくらのクラウドに戻って、リソースマネージャー→公開鍵で、公開鍵を追加する。
 　　1)生成を選択
 　　2)パスフレーズは6で設定したパスフレーズを入力。
@@ -240,8 +246,12 @@ Your public key has been saved in /root/.ssh/id_rsa.pub.
 
 　1)まずは普通にmastodonのアカウントを作成する。
 　2)DOSやクライアントからサーバにログインする。
-　　dosの場合、ssh root@<ドメインアドレス>、パスフレーズ（公開鍵を設定したときのもの）を入力。
-　3)以下で、1)で作成したアカウントを管理者に昇格させる。
+　　dosの場合：ssh root@<ドメインアドレス>
+    公開鍵を指定する場合は-iオプションを付ける
+    ssh root@<ドメインアドレス> -i <ファイルの絶対パス>
+    ※常に鍵を指定しておいたほうが安全かも
+  3)rootパスワードを入力。
+　4)以下で、1)で作成したアカウントを管理者に昇格させる。
 su - mastodon
 cd live
 RAILS_ENV=production bundle exec rails mastodon:make_admin USERNAME=<1)のユーザID>
@@ -471,6 +481,20 @@ WinScapに秘密鍵ファイルを認識させる
 ユーザ：root
 ホスト：ホストアドレス
 パスフレーズ：管理者のパスワード
+
+
+-----------------------
+＜メモリの調整：redis＞
+
+/etc/redis.conf
+
+redis-cli info
+
+
+http://t-cyrill.hatenablog.jp/entry/2016/12/11/224604
+
+
+https://github.com/yoshiya0503/my-conf/tree/master/redis
 
 
 -----------------------
