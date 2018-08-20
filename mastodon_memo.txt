@@ -497,6 +497,23 @@ http://t-cyrill.hatenablog.jp/entry/2016/12/11/224604
 https://github.com/yoshiya0503/my-conf/tree/master/redis
 
 
+
+
+
+
+
+
+https://qiita.com/chamaharun/items/566c78bb8a13b4c2bc16
+
+yum -y install certbot --enablerepo=epel
+yum install git
+git clone https://github.com/certbot/certbot.git
+cd certbot/
+
+
+
+
+
 -----------------------
 ＜mastodonインスタンス爆破→再建＞
 mastodonインスタンスを一回潰して、同じ手順で再開するときの動作要綱について。
