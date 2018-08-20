@@ -1,6 +1,6 @@
 ---------------------------------
   るしぼっと改2 動作仕様
-    lastupdate：　2018/8/16
+    lastupdate：　2018/8/21
 ---------------------------------
 bot：るしぼっと改（lucida3bot@lucida-don.net）
 　　 twitter：https://twitter.com/lucida_bot
