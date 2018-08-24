@@ -7,13 +7,13 @@ Lucida-Don概要
 <hr />
 
 トゥートする内容はだいたいアカウント別に分かれてます。<br />
-本垢(管理)：<a target="_blank" href="https://lucida-don.info/@lucida3rd">lucida3rd</a><br />
+本垢(管理)：<a target="_blank" href="https://mstdn.lucida-don.info/@lucida3rd">lucida3rd</a><br />
 
-日常垢：<a target="_blank" href="https://lucida-don.info/@lucida3hai">lucida3hai</a><br />
+日常垢：<a target="_blank" href="https://mstdn.lucida-don.info/@lucida3hai">lucida3hai</a><br />
 
-ゲーム垢：<a target="_blank" href="https://lucida-don.info/@lucida3dei">lucida3dei</a><br />
+ゲーム垢：<a target="_blank" href="https://mstdn.lucida-don.info/@lucida3dei">lucida3dei</a><br />
 
-bot垢(自動)：<a target="_blank" href="https://lucida-don.info/@lucida3bot">lucida3bot</a><br />
+bot垢(自動)：<a target="_blank" href="https://mstdn.lucida-don.info/@lucida3bot">lucida3bot</a><br />
 
 <hr />
 その他の外部アカウント<br />
@@ -30,18 +30,18 @@ github：<a target="_blank" href="https://github.com/lucida3rd">lucida3rd</a><br
 
 ＜Server Information＞<br />
 リージョン：さくらインターネット<br />
-サーバ：Iaas（スペック不明）<br />
+サーバ：VPS（スペック不明）<br />
 OS：CentOS 7.5<br />
-CPU：1Core（スペック不明）<br />
+CPU：3Core（スペック不明）<br />
 メモリ：2GB（スペック不明）<br />
-SSD：20GB（スペック不明）<br />
+SSD：50GB（スペック不明）<br />
 ネット帯域幅：100Mbps<br />
 <br />
 webサーバ：nginx<br />
 <hr />
 
 ＜Mastodon Information＞<br />
-バージョン：	v2.4.3	<br />
+バージョン：	v2.4.4	<br />
 
 docker：non-docker<br />
 データベース：postgreSQL<br />
@@ -49,5 +49,6 @@ docker：non-docker<br />
 
 <hr />
 ＜History＞<br />
+2018/8/24 クラウド→VPSに移行（v2.4.4）<br />
 2018/8/15 新設（v2.4.3）<br />
 

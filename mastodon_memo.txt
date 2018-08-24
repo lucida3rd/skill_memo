@@ -1,18 +1,17 @@
 -----------------------
-mastodonメモ
+mastodon 運用メモ
 -----------------------
 
------------------------
 ＜よく見るフォルダ＞
 nginxのコンフィグ
 vim /etc/nginx/conf.d/https.conf
   nginx再起動 # sudo nginx -s reload
 
+mastodonコンフィグ
+vim /home/mastodon/live/.env.production
+
 CentOSエラーログ
 cd /var/spool/mail
-
-ホームページのホーム
-cd /home/mastodon/live/public
 
 mastodonのホーム
 cd /home/mastodon/live
@@ -150,316 +149,40 @@ systemctl restart mastodon*
 　2番目については自分でアカウントを建てれば簡単にできそう。
 
 
------------------------
-＜mastodonの自インスタンスを建てる＞
-
-さくらインターネットのさくらのクラウドを利用する方法。
-クラウドサーバを建てるときにmastodonを自動セットアップするスクリプトが選択できるので、比較的簡単に導入できる。
-Non-Dockerでnginxも導入される。ので、上手く設定すればwebページも併設できる。
-
-参考
-https://knowledge.sakura.ad.jp/8591/
-
-
-必要なもの
-・クレジットカード
-・スマートフォン（ワンタイムアプリを動かす。SMSではダメ。）
-・Google Authenticator
-
-
-手順：
-1.さくらインターネットの会員登録をする
-
-2.さくらのドメインでmastodonで使うドメインを取得する
-　→この時に支払いのクレジットカードを登録する
-
-3.さくらのクラウドアカウントを作成する（会員とは別）
-　→ワンタイムパスワードの設定が必須
-　→作るだけならこの時点では課金対象外
-
-4.さくらのクラウドでDNSの設定をする
-　→左上のゾーンは「石狩」を選択する（こっちのが安い）
-　→2で取得したドメインを登録する
-　→設定後に出るDNSゾーン情報（２個）をメモしておくこと
-
-5.ドメインコントローラー（さくら会員の契約ドメインページ）でゾーン設定をおこなう
-　ドメインメニュー→Whois情報で、ネームサーバ1,2に4で得たDNSゾーン情報を設定する
-　→設定が反映されるのに2時間くらいかかる
-
-6.公開鍵を作成する
-　1)DOSプロンプトを開く
-　2)ssh-keygen -t rsa
-　3)鍵の出力パス、ファイルが設定できる。変更しないならそのままenter。
-　　デフォルトの出力先は、
-　　<ユーザディレクトリ>\.ssh
-    ※複数鍵を作る場合はここでファイル分けしておく
-　4)パスフレーズを設定しenter。（2回）
-　　以下のように出力されれば成功。
-Your identification has been saved in /root/.ssh/id_rsa.
-Your public key has been saved in /root/.ssh/id_rsa.pub.
-　　※ファイルは消したほうがいいって話だけど、TeraTermなどからログインするのに必要なので。
-    参考情報：https://qiita.com/0084ken/items/2e4e9ae44ec5e01328f1
-
-7.公開鍵を設定する
-　→さくらのクラウドに戻って、リソースマネージャー→公開鍵で、識別キーを追加する。
-　　1)追加を選択
-　　2)公開鍵に /root/.ssh/id_rsa.pubの内容 ssh-rsaで始まるキーを全てコピペする。
-　→さくらのクラウドに戻って、リソースマネージャー→公開鍵で、公開鍵を追加する。
-　　1)生成を選択
-　　2)パスフレーズは6で設定したパスフレーズを入力。
-　→秘密鍵（証明書）はダウンロードして、わかりやすいフォルダに保存しておく。
-
-8.APIキーを作成する
-　7の設定が上手くいくとAPIキーが作成できるので、作成する。
-　ホームに戻り、APIキーを選択。追加から。
-　名前はわかりやすいものをつけておくほうがよい。他はいじらなくていい。
-　アクセストークンとトークンシークレットは控えておく。
-
-9.ディスクを作成する
-　ディスク容量を選択。
-　アーカイブ：CentOS 7.5を選択
-　名前は分かりやすいものをつける。
-　あとでディスク修正するので他は適当でも。
-
-10.サーバを作成する
-　ディスクはマイディスクで9で作ったディスクを選択
-　管理ユーザのパスワード：rootのパスワード
-　SSD：必要に応じて。
-　メモリ：必要に応じて。
-
-　ディスクを修正
-　管理ユーザのパスワード：rootのパスワード
-　ホスト：ホスト名
-　スタートアップスクリプト：mastodonを選択
-　APIキー：8で作成したキーを選択する
-
-　すぐに起動をチェックして、作成。
-　ステータス上は「完了」と出るが、これはサーバの作成のこと。
-　mastodonの作成はかなり時間がかかるので、時間を置くこと。（2時間くらい見ておいたほうが無難）
-
-11.mastodonの設定をする
-　Webブラウザで「https://＜ドメイン＞/」にアクセスする。
-　mastodonのログインページがでたらOK。
-　でなかったらまだmastodon作成中なので、時間を置いて待つ。
-　※ここで慌てないこと！
-　2時間置いても出なかったら設定に問題あるかも？
-
-　1)まずは普通にmastodonのアカウントを作成する。
-　2)DOSやクライアントからサーバにログインする。
-　　dosの場合：ssh root@<ドメインアドレス>
-    公開鍵を指定する場合は-iオプションを付ける
-    ssh root@<ドメインアドレス> -i <ファイルの絶対パス>
-    ※常に鍵を指定しておいたほうが安全かも
-  3)rootパスワードを入力。
-　4)以下で、1)で作成したアカウントを管理者に昇格させる。
-su - mastodon
-cd live
-RAILS_ENV=production bundle exec rails mastodon:make_admin USERNAME=<1)のユーザID>
-
-以下のようなメッセージがでれば成功。
-Congrats! <ユーザID> is now an admin. \o/
-Navigate to https://<ドメインアドレス>/admin/settings to get started
-
-　4) 1)のユーザでmastodonに再ログインすると、管理者メニューが使えるようになる。
-
 
 -----------------------
-＜vimの導入＞
-現在入っている Vim エディタを確認します。
-$ yum list installed | grep vim
+＜SSL証明書の編集：サブドメインの追加＞
+スタートアップスクリプトではLet's EmcryptのSSL証明書も作成されるが、
+mastodonのドメインの登録のみで、サブドメインなどでアクセスすると証明書エラーとなる。
+これを解決するため、証明書の更新（サブドメインの追加）をおこなう。
 
-vimをインストールするのに必要なパッケージをインストールします。
-$ yum install mercurial
-$ yum install ncurses-devel
-$ yum install make
-$ yum install gcc
-
-ソースビルドでのインストールを行います。
-$ su
-パスワード：（ root のパスワードを入力）
-$ cd /usr/local/src
-$ hg clone https://bitbucket.org/vim-mirror/vim vim
-
-vimのインストール
-$ cd vim
-$ sudo ./configure --with-features=huge --enable-multibyte --disable-selinux
-$ sudo make
-$ sudo make install
+参考：
+https://qiita.com/chamaharun/items/566c78bb8a13b4c2bc16
 
 
------------------------
-＜mastodon外部メディアストレージへの移設→wasabi＞
+1.certbotをインストールする
+cd /root
+yum -y install certbot --enablerepo=epel
+yum install git
+git clone https://github.com/certbot/certbot.git
+cd certbot
 
-参考
-https://angristan.xyz/moving-mastodon-media-files-to-wasabi-object-storage/
+上記手順だとurllib3が書き換わるのでインストールしなおす（なんとかなんないのかなこれ..）
+pip install --upgrade --force-reinstall 'requests==2.6.0' urllib3
 
-てかここに全部書いてあるので概要をざっと。
+3.nginxを停止する
+sudo nginx -s stop
 
-mastodon鯖は、連合で認識したユーザがもつメディアを鯖内に保持する仕様になっている。
-つまり連合のユーザを認識すればするほどメディアファイルが増えていき、ディスク容量を
-圧迫することになる。
-極端にローカルな鯖であれば、定期的なディスククリーンアップで対応できるが、認識外で
-鯖の接続数が増えるとやがて対応しきれない。ディスク容量を増やすにしても資金的、物理的
-にも限界があるだろう。
+2.certbotを起動する
+/root/certbot/certbot-auto certonly
 
-そこで、メディアファイルだけ外部のオブジェクトストレージを使う方法がある。
+3.入力する
+2
+[追加するドメイン]
+2
 
-mastodonはデフォルトでamazonのs3サービスに対応していて、キーさえ取得できればすぐに
-外部メディアストレージ化が始められる。今回はknzk.meでも採用されている「wasabi」へ
-移設する方法を示す。手順はs3とほぼ変わらない上、こちらのほうが安い（営業妨害だ）
-https://wasabi.com/pricing/
-
-またwasabiは30日間/1TBの無料期間がある。
-
-1.wasabiでユーザ登録する。
-
-2.「strage」画面でバケツ（画像を入れるプロジェクトフォルダのようなもの）を作る。
-　名前はわかりやすいもので。
-　名前はメモしておく。
-
-3.バケツのポリシーに以下を貼り付けてセーブする。
-　バケツ名はエディタで編集してからにする。
-
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "AddPerm",
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "*"
-      },
-      "Action": "s3:GetObject",
-      "Resource": "arn:aws:s3:::【バケツ名】/*"
-    }
-  ]
-}
-
-4.IAM→USERから、mastodonがバケツにアクセスするユーザを作成する。
-　Programmaticをチェックしておく。
-　作成時に表示されるAPI Key、Secret API Keyはメモしておくこと。
-
-5.IAM→POLICYから、4のユーザの専用ポリシーを作る。内容は以下。
-　ポリシー名はわかりやすい名前で。
-　バケツ名はエディタで編集してからにする。
-
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "s3:ListBucket",
-      "Resource": "arn:aws:s3:::【バケツ名】"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:PutObject",
-        "s3:GetObject",
-        "s3:DeleteObject"
-      ],
-      "Resource": "arn:aws:s3:::【バケツ名】*"
-    }
-  ]
-}
-
-6.IAM→USERで4のユーザのPERMISSIONSで5のポリシーを追加する。
-
-7.サーバのコンソールにログインする。（root権限のままでok）
-　mastodonのliveフォルダに移動する。
-　# cd /home/mastodon/live
-
-　pipでwasabiへのアップローダaws-cliをインストールする。
-　# pip install awscli
-
-　バージョンが表示されればOK。
-　# aws --version
-　aws-cli/1.15.26 Python/2.7.13 Linux/4.9.0-6-amd64 botocore/1.10.26
-
-8.aws-cliに4で取得したアクセスキーを設定する。
-　# aws configure
-　AWS Access Key ID [None]: 【API KEY】
-　AWS Secret Access Key [None]: 【SECRET API KEY】
-　Default region name [None]:（空欄）
-　Default output format [None]:（空欄）
-
-9.古いキャッシュを掃除しておく。
-　# su - mastodon
-　$ cd live
-　$ RAILS_ENV=production bundle exec rake mastodon:media:remove_remote
-　$ exit
-
-10.mastodonとバケツを同期する。かなり時間がかかります。
-　# aws s3 sync public/system/ s3://【バケツ名】/ --endpoint-url=https://s3.wasabisys.com
-
-11.nginxにキャッシュ用のプロクシサーバ（wasabiの仮想サーバ）を設定する。
-　# vim /etc/nginx/conf.d/https.conf
-
-　http層の中にまるまるコピー。バケツ名は各自で。
-
-proxy_cache_path /tmp/nginx_mstdn_media levels=1:2 keys_zone=【バケツ名】:100m max_size=1g inactive=24h;
-
-server {
-    listen 80;
-    listen [::]:80;
-    server_name media.mstdn.io;
-    return 301 https://media.mstdn.io$request_uri;
-    access_log /dev/null;
-    error_log /dev/null;
-}
-
-server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-    server_name media.mstdn.io;
-
-    access_log /var/log/nginx/mstdn-media-access.log;
-    error_log /var/log/nginx/mstdn-media-error.log;
-
-    location / {
-            proxy_cache 【バケツ名】;
-            proxy_cache_revalidate on;
-            proxy_buffering on;
-            proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
-            proxy_cache_background_update on;
-            proxy_cache_lock on;
-            proxy_cache_valid 1d;
-            proxy_cache_valid 404 1h;
-            proxy_ignore_headers Cache-Control;
-            add_header X-Cached $upstream_cache_status;
-            proxy_pass https://s3.wasabisys.com/;
-    }
-}
-
-13.nginxを再起動する。
-　# sudo nginx -s reload
-
-　エラーがでなければOK。
-
-12.mastodonのコンフィグにバケツのアクセスキーを設定する。
-　# vim .env.production
-
-S3_ENABLED=true
-S3_BUCKET=【バケツ名】
-AWS_ACCESS_KEY_ID=【API Key】
-AWS_SECRET_ACCESS_KEY=【Secret API Key】
-S3_REGION=【バケツのRegion】
-S3_PROTOCOL=https
-S3_HOSTNAME=media.mstdn.io
-S3_ENDPOINT=https://s3.wasabisys.com/
-
-13.mastodonとバケツを同期する。差分だけの同期になる。
-　# aws s3 sync public/system/ s3://【バケツ名】/ --endpoint-url=https://s3.wasabisys.com
-
-14.mastodonを再起動する。
-　# systemctl restart mastodon*
-
-15.キャッシュが有効かを確認する。
-　# curl -I https://media.mstdn.io/mstdn-media/media_attachments/files/001/871/825/original/f35282636242f8c7.jpg
-HTTP/2 200
-以下～
-
-16.public/system以下のフォルダを削除する。（ローカル画像キャッシュ。もう不要のため）
+4.サーバを再起動する
+reboot
 
 
 
@@ -496,19 +219,6 @@ http://t-cyrill.hatenablog.jp/entry/2016/12/11/224604
 
 https://github.com/yoshiya0503/my-conf/tree/master/redis
 
-
-
-
-
-
-
-
-https://qiita.com/chamaharun/items/566c78bb8a13b4c2bc16
-
-yum -y install certbot --enablerepo=epel
-yum install git
-git clone https://github.com/certbot/certbot.git
-cd certbot/
 
 
 
