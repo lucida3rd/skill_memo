@@ -286,13 +286,48 @@ https://wasabi.com/pricing/
 
 またwasabiは30日間/1TBの無料期間がある。
 
-1.wasabiでユーザ登録する。
 
-2.「strage」画面でバケツ（画像を入れるプロジェクトフォルダのようなもの）を作る。
+プロキシサーバはmastodonサービスが画像をwasabiに転送したり、ユーザが画像にアクセスする
+ときに中継する役割をする。（s3ドライバから見るとホストになる）
+
+メディアへのアクセスは以下のようになる。
+
+・mastodonへ画像を投稿、あるいはタイムラインから画像を受信する。
+　↓
+・mastodonがwasabiのストレージ上に転送（ここに画像データを置く）
+
+・ユーザがプロキシのアドレスで画像リンクへアクセス
+　↓
+・プロキシサーバにアクセスされる（自前バーチャル鯖）
+　↓
+・wasabiの画像ストレージ上の画像にアクセス（ここに画像データがある）
+
+
+★ここで紹介する手順は記事と違って、プロキシサーバを自前で用意することとする。
+　またプロキシサーバはサブドメインで運用する。
+
+
+1.プロキシサーバ用にDNSにサブドメインを登録する。
+　さくらインターネットの場合、ドメインコントローラから設定する。
+　（上記「mastodonを建てる」参考）
+
+@ A [サーバIP]
+[サブドメイン名] A [サーバIP]
+
+  ここで設定したサブドメイン＋ドメイン名が、プロキシサーバのドメイン名となる。
+  以下【仮想鯖名】とする。
+
+2.サブドメイン用にSSL証明書を発行する。
+  やり方が分からない場合、mastodon_memo.txtの「SSL証明書の編集：サブドメインの追加」参考。
+
+
+3.wasabiでユーザ登録する。
+
+4.「strage」画面でバケツ（画像を入れるプロジェクトフォルダのようなもの）を作る。
 　名前はわかりやすいもので。
 　名前はメモしておく。
 
-3.バケツのポリシーに以下を貼り付けてセーブする。
+5.バケツのポリシーに以下を貼り付けてセーブする。
 　バケツ名はエディタで編集してからにする。
 
 {
@@ -310,11 +345,11 @@ https://wasabi.com/pricing/
   ]
 }
 
-4.IAM→USERから、mastodonがバケツにアクセスするユーザを作成する。
+6.IAM→USERから、mastodonがバケツにアクセスするユーザを作成する。
 　Programmaticをチェックしておく。
 　作成時に表示されるAPI Key、Secret API Keyはメモしておくこと。
 
-5.IAM→POLICYから、4のユーザの専用ポリシーを作る。内容は以下。
+7.IAM→POLICYから、6のユーザの専用ポリシーを作る。内容は以下。
 　ポリシー名はわかりやすい名前で。
 　バケツ名はエディタで編集してからにする。
 
@@ -338,9 +373,9 @@ https://wasabi.com/pricing/
   ]
 }
 
-6.IAM→USERで4のユーザのPERMISSIONSで5のポリシーを追加する。
+8.IAM→USERで4のユーザのPERMISSIONSで6のポリシーを追加する。
 
-7.サーバのコンソールにログインする。（root権限のままでok）
+9.サーバのコンソールにログインする。（root権限のままでok）
 　mastodonのliveフォルダに移動する。
 　# cd /home/mastodon/live
 
@@ -351,23 +386,23 @@ https://wasabi.com/pricing/
 　# aws --version
 　aws-cli/1.15.26 Python/2.7.13 Linux/4.9.0-6-amd64 botocore/1.10.26
 
-8.aws-cliに4で取得したアクセスキーを設定する。
+10.aws-cliに6で取得したアクセスキーを設定する。
 　# aws configure
 　AWS Access Key ID [None]: 【API KEY】
 　AWS Secret Access Key [None]: 【SECRET API KEY】
 　Default region name [None]:（空欄）
 　Default output format [None]:（空欄）
 
-9.古いキャッシュを掃除しておく。
+11.古いキャッシュを掃除しておく。
 　# su - mastodon
 　$ cd live
 　$ RAILS_ENV=production bundle exec rake mastodon:media:remove_remote
 　$ exit
 
-10.mastodonとバケツを同期する。かなり時間がかかります。
+12.mastodonとバケツを同期する。かなり時間がかかります。
 　# aws s3 sync public/system/ s3://【バケツ名】/ --endpoint-url=https://s3.wasabisys.com
 
-11.nginxにキャッシュ用のプロクシサーバ（wasabiの仮想サーバ）を設定する。
+13.nginxにキャッシュ用のプロクシサーバ（mastodonやユーザの中継サーバ）を設定する。
 　# vim /etc/nginx/conf.d/https.conf
 
 　http層の中にまるまるコピー。バケツ名は各自で。
@@ -377,7 +412,7 @@ proxy_cache_path /tmp/nginx_mstdn_media levels=1:2 keys_zone=【バケツ名】:
 server {
     listen 80;
     listen [::]:80;
-    server_name media.mstdn.io;
+    server_name 【仮想鯖名】;
     return 301 https://media.mstdn.io$request_uri;
     access_log /dev/null;
     error_log /dev/null;
@@ -386,7 +421,15 @@ server {
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
-    server_name media.mstdn.io;
+    server_name 【仮想鯖名】;
+
+	ssl_protocols TLSv1.2;
+	ssl_ciphers EECDH+AESGCM:EECDH+AES;
+	ssl_ecdh_curve prime256v1;
+	ssl_prefer_server_ciphers on;
+	ssl_session_cache shared:SSL:10m;
+	ssl_certificate /etc/letsencrypt/live/【仮想鯖名】/fullchain.pem;
+	ssl_certificate_key /etc/letsencrypt/live/【仮想鯖名】/privkey.pem;
 
     access_log /var/log/nginx/mstdn-media-access.log;
     error_log /var/log/nginx/mstdn-media-error.log;
@@ -406,12 +449,12 @@ server {
     }
 }
 
-13.nginxを再起動する。
+14.nginxを再起動する。
 　# sudo nginx -s reload
 
 　エラーがでなければOK。
 
-12.mastodonのコンフィグにバケツのアクセスキーを設定する。
+15.mastodonのコンフィグにバケツのアクセスキーを設定する。
 　# vim .env.production
 
 S3_ENABLED=true
@@ -420,21 +463,21 @@ AWS_ACCESS_KEY_ID=【API Key】
 AWS_SECRET_ACCESS_KEY=【Secret API Key】
 S3_REGION=【バケツのRegion】
 S3_PROTOCOL=https
-S3_HOSTNAME=media.mstdn.io
+S3_HOSTNAME=【仮想鯖名】
 S3_ENDPOINT=https://s3.wasabisys.com/
 
-13.mastodonとバケツを同期する。差分だけの同期になる。
+16.mastodonとバケツを同期する。差分だけの同期になる。
 　# aws s3 sync public/system/ s3://【バケツ名】/ --endpoint-url=https://s3.wasabisys.com
 
-14.mastodonを再起動する。
+17.mastodonを再起動する。
 　# systemctl restart mastodon*
 
-15.キャッシュが有効かを確認する。
-　# curl -I https://media.mstdn.io/mstdn-media/media_attachments/files/001/871/825/original/f35282636242f8c7.jpg
+18.キャッシュが有効かを確認する。
+　# curl -I https://media.mstdn.io/【バケツ名】/media_attachments/files/001/871/825/original/f35282636242f8c7.jpg
 HTTP/2 200
 以下～
 
-16.public/system以下のフォルダを削除する。（ローカル画像キャッシュ。もう不要のため）
+19.public/system以下のフォルダを削除する。（ローカル画像キャッシュ。もう不要のため）
 
 
 

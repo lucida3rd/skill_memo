@@ -182,8 +182,10 @@ sudo nginx -s stop
 2
 
 4.サーバを再起動する
-reboot
+reboot だと起動が中途半端なのか上手くいかないのでコンソールから実施すること。
 
+証明書の場所
+/etc/letsencrypt/live/
 
 
 -----------------------
@@ -221,6 +223,36 @@ https://github.com/yoshiya0503/my-conf/tree/master/redis
 
 
 
+
+
+-----------------------
+＜バックアップ＞
+
+
+
+
+http://fnya.cocolog-nifty.com/blog/2017/10/mastodon-3861.html
+
+https://manual.sakura.ad.jp/cloud/appliance/database/postgresql.html
+
+
+$ su - mastodon
+$ mkdir dbbackup
+$ cd dbbackup
+$ pg_dump --username=mastodon --no-owner mastodon > prefix.`date +%Y%m%d_%H%M%S`.pgdump
+
+
+/home/mastodon/live
+.env.production
+
+/etc/nginx
+nginx.conf
+
+/etc/nginx/conf.d
+https.conf
+
+
+aws s3 sync public/system/ s3://[バケット名]/ --endpoint-url=https://s3.wasabisys.com
 
 
 

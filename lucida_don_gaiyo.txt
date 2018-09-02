@@ -7,13 +7,13 @@ Lucida-Don概要
 <hr />
 
 トゥートする内容はだいたいアカウント別に分かれてます。<br />
-本垢(管理)：<a target="_blank" href="https://mstdn.lucida-don.info/@lucida3rd">lucida3rd</a><br />
+本垢(管理)：<a target="_blank" href="https://mstdn.lucida-don.net/@lucida3rd">lucida3rd</a><br />
 
-日常垢：<a target="_blank" href="https://mstdn.lucida-don.info/@lucida3hai">lucida3hai</a><br />
+日常垢：<a target="_blank" href="https://mstdn.lucida-don.net/@lucida3hai">lucida3hai</a><br />
 
-ゲーム垢：<a target="_blank" href="https://mstdn.lucida-don.info/@lucida3dei">lucida3dei</a><br />
+ゲーム垢：<a target="_blank" href="https://mstdn.lucida-don.net/@lucida3dei">lucida3dei</a><br />
 
-bot垢(自動)：<a target="_blank" href="https://mstdn.lucida-don.info/@lucida3bot">lucida3bot</a><br />
+webサイト：<a target="_blank" href="https://web.lucida-don.net/">web</a><br />
 
 <hr />
 その他の外部アカウント<br />
@@ -49,6 +49,7 @@ docker：non-docker<br />
 
 <hr />
 ＜History＞<br />
-2018/8/24 クラウド→VPSに移行（v2.4.4）<br />
+2018/8/25 →mastodon v2.4.5<br />
+2018/8/24 クラウド→VPSに移行（mastodon v2.4.4）<br />
 2018/8/15 新設（v2.4.3）<br />
 
