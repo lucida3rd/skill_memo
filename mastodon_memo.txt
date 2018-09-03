@@ -151,6 +151,49 @@ systemctl restart mastodon*
 
 
 -----------------------
+＜Node.jsの管理：nvmコマンド＞
+
+mastodonのリリースノートでNode.jsをアップデートするのに、curlからapt-setを起動する方法
+で記載されているが、Cent OSの場合apt-setコマンドに対応してないためこの手順では
+アップデートできない。
+
+qiitaの先輩の記事にやり方が書いてあった。
+てかこれも全部書いてあります（ありがたい）。
+https://qiita.com/strsk/items/925644e124efcc964625
+
+
+さくらのスクリプトを使う場合、mastodonユーザにnvmコマンドを入れるようにする。
+
+1.mastodon権限に変更する。
+# su - mastodon
+
+2.nvmをインストールする。
+$ git clone git://github.com/creationix/nvm.git ~/.nvm
+$ source ~/.nvm/nvm.sh
+
+3.Node.jsのリリースバージョン一覧を表示する。
+$ nvm ls-remote
+
+このなかで「Latest LTS: Carbon」のものが最新。
+
+4.Node.jsをインストールする。
+$ nvm install 8.11.4
+
+5.バージョンを切り替える。
+$ nvm use 8.11.4
+
+6.今使っているNode.jsのバージョンを確認する。
+$ node -v
+
+ここで4で入れたバージョンが表示されていればOK。
+
+
+※nvmは複数のバージョンをシステムにインストールしておいて、
+　バージョンを自由に切り替えできるツールらしい。
+
+
+
+-----------------------
 ＜SSL証明書の編集：サブドメインの追加＞
 スタートアップスクリプトではLet's EmcryptのSSL証明書も作成されるが、
 mastodonのドメインの登録のみで、サブドメインなどでアクセスすると証明書エラーとなる。
