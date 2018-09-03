@@ -153,8 +153,8 @@ systemctl restart mastodon*
 -----------------------
 ＜Node.jsの管理：nvmコマンド＞
 
-mastodonのリリースノートでNode.jsをアップデートするのに、curlからapt-setを起動する方法
-で記載されているが、Cent OSの場合apt-setコマンドに対応してないためこの手順では
+mastodonのリリースノートでNode.jsをアップデートするのに、curlからapt-getを起動する方法
+で記載されているが、Cent OSの場合apt-getコマンドに対応してないためこの手順では
 アップデートできない。
 
 qiitaの先輩の記事にやり方が書いてあった。
