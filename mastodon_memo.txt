@@ -151,6 +151,27 @@ systemctl restart mastodon*
 
 
 -----------------------
+＜Node.jsのグローバル更新＞
+
+https://qiita.com/Yorinton/items/00ad34f3f902ed41c12f
+
+nコマンドを使ったアップデート。
+この方法だとnvmなどで切り替えできなくてグローバル的にアップデートされる。
+mastodonではこの方法でならアップデートが楽になりそう。
+
+1. nをインストールする
+# npm install -g n
+
+2. Node.jsをアップデートする
+# n stable     安定版
+# n latest     最新版
+
+sudoの設定をすれば効くらしい。
+この場合、グローバルアップデートにはならない？（わからん）
+
+
+
+-----------------------
 ＜Node.jsの管理：nvmコマンド＞
 
 mastodonのリリースノートでNode.jsをアップデートするのに、curlからapt-getを起動する方法
@@ -177,16 +198,15 @@ $ nvm ls-remote
 このなかで「Latest LTS: Carbon」のものが最新。
 
 4.Node.jsをインストールする。
-$ nvm install 8.11.4
+$ nvm install [ver番号]
 
 5.バージョンを切り替える。
-$ nvm use 8.11.4
+$ nvm use [ver番号]
 
 6.今使っているNode.jsのバージョンを確認する。
 $ node -v
-
+[ver番号]
 ここで4で入れたバージョンが表示されていればOK。
-
 
 ※nvmは複数のバージョンをシステムにインストールしておいて、
 　バージョンを自由に切り替えできるツールらしい。
