@@ -47,6 +47,7 @@ aws s3 sync public/system/ s3://[バケット名]/ --endpoint-url=https://s3.was
 localhost:4000
 
 
+
 -----------------------
 ＜centosコマンド＞
 df
@@ -316,6 +317,29 @@ https.conf
 
 
 aws s3 sync public/system/ s3://[バケット名]/ --endpoint-url=https://s3.wasabisys.com
+
+
+
+-----------------------
+＜nginxがnginx: [error] open()で起動できない場合の対処＞
+
+1.nginxサービスを止める。
+# service nginx stop
+
+2.nginx関係のプロセスを見つける。
+# ps aux | grep nginx
+
+3.でてきたプロセスをすべてころす。
+# systemctl kill -s 9 [サービス名]
+サービス名..例えば nginx.service
+
+4.nginxを起動する。
+# service nginx start
+
+5.サービスの状態を確認する。
+# systemctl status nginx*
+
+activeになっていればOK。
 
 
 

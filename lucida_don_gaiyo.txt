@@ -17,7 +17,7 @@ webサイト：<a target="_blank" href="https://web.lucida-don.net/">web</a><br 
 
 <hr />
 その他の外部アカウント<br />
-JP鯖(予備)：<a target="_blank" href="https://mstdn.jp/@lucida3yobi">lucida3yobi@mstdn.jp</a><br />
+JP鯖(予備)：<a target="_blank" href="https://mstdn.maud.io/@lucida3yobi">lucida3yobi@mstdn.maud.io</a><br />
 
 twitter：<a target="_blank" href="https://twitter.com/lucida_twt">@lucida_twt</a><br />
 
@@ -41,7 +41,7 @@ webサーバ：nginx<br />
 <hr />
 
 ＜Mastodon Information＞<br />
-バージョン：	v2.4.4	<br />
+バージョン：	v2.5.0	<br />
 
 docker：non-docker<br />
 データベース：postgreSQL<br />
@@ -49,6 +49,7 @@ docker：non-docker<br />
 
 <hr />
 ＜History＞<br />
+2018/9/3 →mastodon v2.5.0<br />
 2018/8/25 →mastodon v2.4.5<br />
 2018/8/24 クラウド→VPSに移行（mastodon v2.4.4）<br />
 2018/8/15 新設（v2.4.3）<br />
