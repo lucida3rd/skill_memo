@@ -1,0 +1,112 @@
+-----------------------
+mastodon 没メモ
+
+Lucida（lucida3rd@mstdn.lucida-don.net）
+-----------------------
+＜概要＞
+
+よくわかんなかった技術。もしくは調整中の技術。
+
+
+
+---------------------------------
+＜注意事項＞
+---------------------------------
+・不完全なためどんな結果になるかわかりません。
+  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+・このメモを使用したことによる不具合、損害について当方は責任を持ちません。
+  全て自己責任でお願いします。
+・当メモの質問は受け付けません。自己対応でお願いします。
+
+
+
+-----------------------
+＜Node.jsの管理：nvmコマンド＞
+
+mastodonのリリースノートでNode.jsをアップデートするのに、curlからapt-getを起動する方法
+で記載されているが、Cent OSの場合apt-getコマンドに対応してないためこの手順では
+アップデートできない。
+
+qiitaの先輩の記事にやり方が書いてあった。
+てかこれも全部書いてあります（ありがたい）。
+https://qiita.com/strsk/items/925644e124efcc964625
+
+
+さくらのスクリプトを使う場合、mastodonユーザにnvmコマンドを入れるようにする。
+
+1.mastodon権限に変更する。
+# su - mastodon
+
+2.nvmをインストールする。
+$ git clone git://github.com/creationix/nvm.git ~/.nvm
+$ source ~/.nvm/nvm.sh
+
+3.Node.jsのリリースバージョン一覧を表示する。
+$ nvm ls-remote
+
+このなかで「Latest LTS: Carbon」のものが最新。
+
+4.Node.jsをインストールする。
+$ nvm install [ver番号]
+
+5.バージョンを切り替える。
+$ nvm use [ver番号]
+
+6.今使っているNode.jsのバージョンを確認する。
+$ node -v
+[ver番号]
+ここで4で入れたバージョンが表示されていればOK。
+
+※nvmは複数のバージョンをシステムにインストールしておいて、
+　バージョンを自由に切り替えできるツールらしい。
+
+
+
+-----------------------
+＜メモリの調整：redis＞
+
+/etc/redis.conf
+
+redis-cli info
+
+
+http://t-cyrill.hatenablog.jp/entry/2016/12/11/224604
+
+
+https://github.com/yoshiya0503/my-conf/tree/master/redis
+
+
+
+
+
+-----------------------
+＜バックアップ＞
+
+
+
+
+http://fnya.cocolog-nifty.com/blog/2017/10/mastodon-3861.html
+
+https://manual.sakura.ad.jp/cloud/appliance/database/postgresql.html
+
+
+$ su - mastodon
+$ mkdir dbbackup
+$ cd dbbackup
+$ pg_dump --username=mastodon --no-owner mastodon > prefix.`date +%Y%m%d_%H%M%S`.pgdump
+
+
+/home/mastodon/live
+.env.production
+
+/etc/nginx
+nginx.conf
+
+/etc/nginx/conf.d
+https.conf
+
+
+aws s3 sync public/system/ s3://[バケット名]/ --endpoint-url=https://s3.wasabisys.com
+
+
+
