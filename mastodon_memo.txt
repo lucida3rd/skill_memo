@@ -412,6 +412,79 @@ vm.swappiness = 10  ※追加
 
 
 -----------------------
+＜ImageMagic 弱小鯖向けのビルド＞
+
+ImageMagicの個人makeインストール方法（CentOS版）。
+あとmastodonの場合、png形式を扱う機会が多いので（iPhoneユーザ向け）
+pngのライブラリも別途makeインストールする必要がある。
+
+参考
+https://gist.github.com/crakaC/9f8f33aa8179234b19148e602bc980f4#file-install_imagemagick-md
+
+
+1.先にpngライブラリを展開する。
+ライブラリのページからアーカイブをダウンロードする。
+http://www.libpng.org/pub/png/libpng.html
+
+# wget [アーカイブのリンク]
+# tar xvzf [アーカイブファイル名]
+# cd [解凍されたフォルダ]
+
+2.メイクする。
+# ./configure --enable-shared
+# make
+
+3.インストールする。
+# make install
+
+4.ImageMagicのイメージを展開する。
+ライブラリのフォルダからrootに移ってから作業する。
+# cd ..
+# wget https://www.imagemagick.org/download/ImageMagick.tar.gz
+# tar xvzf ImageMagick.tar.gz
+# cd [解凍されたフォルダ]
+
+5.おまじない？？？
+実行するとコケるけど気にしない。
+pngのライブラリパスを通すことをやってるらしい。
+# export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+# ./configure LDFLAGS='-L/usr/local/lib -R/usr/local/lib'
+
+6.オプションを変更する
+--with-quantum-depth  ※画像のbit数指定。デフォルトで16bitだけど、普通は8bitでも十分らしい。
+--disable-openmp      ※シングルコアの場合効果あり
+--without-threads     ※シングルコアの場合効果あり
+--disable-hdri        ※HDRI変換を無効にすることでリソースが抑えられる
+--with-png            ※pngの有効化。付けなくてもいい気もする。
+
+★シングルコア向け
+# ./configure --disable-hdri --with-quantum-depth=8 --with-png --disable-openmp --without-threads
+# make
+
+★マルチコア向け
+# ./configure --disable-hdri --with-quantum-depth=8 --with-png
+# make
+
+このとき--with-pngがyesになってることを確認する。
+noのままであれば5でがんばってパスを通すこと。（どうやるんぢゃ？）
+
+7.インストールする。
+# make install
+# ldconfig /usr/local/lib  ※やらなくていい気もする
+
+8.動作確認
+# convert -version
+  今日の日付で～Q8～であればOK。
+  いちおmastodon権限でも試してみる。
+
+
+その他：
+何らかの不手際でリメイクするときはmakeファイルをクリアすること。
+# make clean
+
+
+
+-----------------------
 ＜SSL証明書の編集：サブドメインの追加＞
 スタートアップスクリプトではLet's EmcryptのSSL証明書も作成されるが、
 mastodonのドメインの登録のみで、サブドメインなどでアクセスすると証明書エラーとなる。
