@@ -61,6 +61,8 @@ RAILS_ENV=production bundle exec rake mastodon:media:remove_remote
 アバターの取り直し（高負荷）
 mastodon/live配下で
 RAILS_ENV=production bundle exec rake mastodon:media:redownload_avatars
+リモートユーザの場合
+RAILS_ENV=production bundle exec rails mastodon:media:redownload_avatars
 
 管理者化
 RAILS_ENV=production bundle exec rails mastodon:make_admin USERNAME=<ユーザID>
