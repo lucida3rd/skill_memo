@@ -110,3 +110,42 @@ aws s3 sync public/system/ s3://[バケット名]/ --endpoint-url=https://s3.was
 
 
 
+-----------------------
+＜SSL証明書の編集：サブドメインの追加＞	★スマートじゃないやり方
+スタートアップスクリプトではLet's EmcryptのSSL証明書も作成されるが、
+mastodonのドメインの登録のみで、サブドメインなどでアクセスすると証明書エラーとなる。
+これを解決するため、証明書の更新（サブドメインの追加）をおこなう。
+
+参考：
+https://qiita.com/chamaharun/items/566c78bb8a13b4c2bc16
+
+
+1.certbotをインストールする
+cd /root
+yum -y install certbot --enablerepo=epel
+yum install git
+git clone https://github.com/certbot/certbot.git
+cd certbot
+
+上記手順だとurllib3が書き換わるのでインストールしなおす（なんとかなんないのかなこれ..）
+pip install --upgrade --force-reinstall 'requests==2.6.0' urllib3
+
+3.nginxを停止する
+sudo nginx -s stop
+
+2.certbotを起動する
+/root/certbot/certbot-auto certonly
+
+3.入力する
+2
+[追加するドメイン]
+2
+
+4.サーバを再起動する
+reboot だと起動が中途半端なのか上手くいかないのでコンソールから実施すること。
+
+証明書の場所
+/etc/letsencrypt/live/
+
+
+

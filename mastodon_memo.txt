@@ -6,8 +6,9 @@ Lucida（lucida3rd@mstdn.lucida-don.net）
 ＜概要＞
 mastodon運用時によく使うコマンドや技をまとめます。
 
-◆よく見るフォルダ
+◆よく見るフォルダ・よく使うコマンド
 ◆centosコマンド
+◆postgresqlコマンド
 ◆mastodonバージョンアップ手順
 ◆mastodonプリコンパイル
 ◆mastodonの連合TL仕様（個人見解
@@ -37,61 +38,78 @@ mastodon運用時によく使うコマンドや技をまとめます。
 
 
 ---------------------------------
-＜よく見るフォルダ＞
-nginxのコンフィグ
-vim /etc/nginx/conf.d/https.conf
-  nginx再起動 # sudo nginx -s reload
+＜よく見るフォルダ・よく使うコマンド＞
 
+◆nginx関係
+コンフィグ
+# vim /etc/nginx/conf.d/https.conf
+
+再起動
+# sudo nginx -s reload    ※sudoいらないのかな？
+
+
+◆mastodonサービス関係
 mastodonコンフィグ
-vim /home/mastodon/live/.env.production
-
-CentOSエラーログ
-cd /var/spool/mail
+# vim /home/mastodon/live/.env.production
 
 mastodonのホーム
-cd /home/mastodon/live
+# cd /home/mastodon/live
 
-フォルダ以下の容量
-du -h -d 1 live/public/system/
+サービス起動
+# systemctl start mastodon*
+サービス停止
+# systemctl stop mastodon*
+サービス再起動
+# systemctl restart mastodon*
+サービス状態の確認
+# systemctl status mastodon*
 
-7日以前の画像キャッシュ（とそれのトゥート）の削除
-mastodon/live配下で
-RAILS_ENV=production bundle exec rake mastodon:media:remove_remote
 
-アバターの取り直し（高負荷）
-mastodon/live配下で
-RAILS_ENV=production bundle exec rake mastodon:media:redownload_avatars
-リモートユーザの場合
-RAILS_ENV=production bundle exec rails mastodon:media:redownload_avatars
-
-管理者化
-RAILS_ENV=production bundle exec rails mastodon:make_admin USERNAME=<ユーザID>
-権限の剥奪（一般ユーザ化）
-RAILS_ENV=production bundle exec rails mastodon:revoke_staff USERNAME=<ユーザID>
-
-mastodonサービスの制御
-起動
-systemctl start mastodon*
-停止
-systemctl stop mastodon*
-再起動
-systemctl restart mastodon*
+◆rails・s3バケツ関係
+※全てmastodon権限、mastodon/live配下で実行すること。
 
 amazon s3/wasabi バケットの手動同期
-aws s3 sync public/system/ s3://[バケット名]/ --endpoint-url=https://s3.wasabisys.com
+$ aws s3 sync public/system/ s3://[バケット名]/ --endpoint-url=https://s3.wasabisys.com
+
+7日以前の画像キャッシュ（とそれのトゥート）の削除
+$ RAILS_ENV=production bundle exec rake mastodon:media:remove_remote
+
+アバターの取り直し（高負荷）
+$ RAILS_ENV=production bundle exec rake mastodon:media:redownload_avatars
+リモートユーザの場合
+$ RAILS_ENV=production bundle exec rails mastodon:media:redownload_avatars
+
+管理者化
+$ RAILS_ENV=production bundle exec rails mastodon:make_admin USERNAME=<ユーザID>
+
+権限の剥奪（一般ユーザ化）
+$ RAILS_ENV=production bundle exec rails mastodon:revoke_staff USERNAME=<ユーザID>
 
 
 localhost:4000
 
 
-
 -----------------------
 ＜centosコマンド＞
-df
-ディスク容量
+Linuxでは効かないのもあるかも。
 
-top
+ディレクトリ配下
+# ls -la
+
+現在のパス
+# pwd
+
+エラーログ
+# cd /var/spool/mail
+
+フォルダ以下の容量
+# du -h -d 1 live/public/system/
+
+ディスク容量
+# df
+
 3秒ごとにOSで利用しているプロセスの数や状態、またOS全体のシステムリソース状況
+# top
 　%CPU..CPU使用率
 　%MEM..メモリ利用率
 　左から7番目の「S」と書かれた列..プロセスの状態
@@ -100,29 +118,43 @@ top
 　　D->Uninterruptible sleep(IO待ち)
 　※プロセス状態がDの状態が続いてるプロセスがあればIO待ちによってパフォーマンス遅延が発生している可能性がある
 
-vmstat
 メモリやCPU使用率
+# vmstat
 　cpu項の「id」列ではアイドル(空いている)割合をパーセントで表示
 　「wa」列ではストレージのIO完了待ちを示す。
 
-ps
 現在利用しているプロセス・ストッドごとのCPUやメモリ使用率が分かる。
+# ps
 
-free
 メモリに特化して詳細を表示
+# free
 　Mem行のfree列の値は 何の用途にも使っていない物理メモリ量
 
-cat /proc/meminfo
 メモリの詳細がわかる。
+# cat /proc/meminfo
 
-dmidecode --type memory
-dmidecode --type memory | grep Size
 実装されている物理メモリの詳細。
+# dmidecode --type memory
+# dmidecode --type memory | grep Size
 
-
-cat /proc/cpuinfo
 CPUの情報。コアごとに情報を出す。
+# cat /proc/cpuinfo
 
+
+-----------------------
+＜postgreSQLコマンド＞
+dbファイルの場所（どっちか）
+# cd /usr/local/pgsql/ 
+# /var/lib/pgsql/
+
+ログイン
+# psql
+
+postgre終わり
+> \q
+
+db一覧と使用量の確認
+> SELECT datname, pg_size_pretty(pg_database_size(datname)) FROM pg_database;
 
 
 -----------------------
@@ -223,6 +255,8 @@ mastodonのドメインの登録のみで、サブドメインなどでアクセ
 参考：
 https://qiita.com/chamaharun/items/566c78bb8a13b4c2bc16
 
+https://letsencrypt.jp/usage/#ExecClientSoftware
+
 
 1.certbotをインストールする
 cd /root
@@ -231,25 +265,29 @@ yum install git
 git clone https://github.com/certbot/certbot.git
 cd certbot
 
-上記手順だとurllib3が書き換わるのでインストールしなおす（なんとかなんないのかなこれ..）
-pip install --upgrade --force-reinstall 'requests==2.6.0' urllib3
+2.上記手順だとurllib3が書き換わるのでインストールしなおす（なんとかなんないのかなこれ..）
+# pip install --upgrade --force-reinstall 'requests==2.6.0' urllib3
 
-3.nginxを停止する
-sudo nginx -s stop
 
-2.certbotを起動する
-/root/certbot/certbot-auto certonly
+証明書の発行：サブドメインなしの場合
+# certbot certonly --webroot -w [ドメインのカレントフォルダ] -d [ドメイン名]
 
-3.入力する
-2
-[追加するドメイン]
-2
+証明書の発行：サブドメインありの場合
+-dオプションで関連付けられる。
+# certbot certonly --webroot -w [ドメインのカレントフォルダ] -d [ドメイン名] -d[サブドメイン1] -d [サブドメイン1]
 
-4.サーバを再起動する
-reboot だと起動が中途半端なのか上手くいかないのでコンソールから実施すること。
+証明書の発行：別カレントのサブドメイン
+-wオプションで関連付けられる。
+# certbot certonly --webroot -w [ドメインのカレントフォルダ] -d [ドメイン名] -w [サブドメインのカレントフォルダ] -d [サブドメイン1]
+
+
+4.nginxを再起動する。
+# nginx -s reload
+
 
 証明書の場所
 /etc/letsencrypt/live/
+
 
 
 -----------------------
