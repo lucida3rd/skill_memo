@@ -12,6 +12,7 @@ mastodonインスタンスを建てる方法メモ。
 ◆mastodonを建てる：さくらのVPS編
 ◆エディタ：vimの導入
 ◆mastodon外部メディアストレージへの移設→wasabi
+◆postgresのスーパバイザパスワードの再設定
 
 
 
@@ -508,6 +509,57 @@ HTTP/2 200
 以下～
 
 19.public/system以下のフォルダを削除する。（ローカル画像キャッシュ。もう不要のため）
+
+
+
+-----------------------
+＜postgresのスーパバイザパスワードの再設定＞
+
+さくらのスクリプトを使ったセットアップだとpostgresのスーパバイザパスワードが設定されない。
+postgresの仕様でパスワードなしユーザでのログインは拒否となるのでセキュリティの問題はないが、
+新規ユーザを作成する際などのスーパバイザ操作ができなくなる。
+
+そこで以下の手順でパスワードをリセットしておくことをお勧めする。
+
+1.postgresのconfigで認証方式をtrustに書き換える。
+# cd cd /var/lib/pgsql/[バージョン]/data
+# vim pg_hba.conf
+
+以下★印の2か所
+------
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+###local   all             all                                     peer
+local   all             all                                     trust	★
+# IPv4 local connections:
+###host    all             all             127.0.0.1/32            ident
+host    all             all             127.0.0.1/32            trust	★
+------
+
+2.サーバをリブートする。
+
+3.postgresにログインする。
+# psql -U postgres
+
+4.パスワードを書き換える。
+
+postgres=> [新しいパスワード]
+postgres=> alter role postgres with password '[新しいパスワード]';
+ここで ALTER ROLE が出ればOK。
+postgres=> \q
+
+5. 1で書き換えたpostgresの認証方式を元に戻す。
+
+6.サーバをリブートする。
+
+7.接続テスト。
+# psql -h localhost -U postgres -d mastodon
+ここで4で入力したパスワードでログインする。
+
+mastodon=>
+
+のプロンプトがでればOK。
+
+mastodon=> \q
 
 
 
