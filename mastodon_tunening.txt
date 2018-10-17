@@ -197,7 +197,7 @@ Environment="RUBY_GC_HEAP_FREE_SLOTS_MIN_RATIO=0.1"
 Environment="RUBY_GC_HEAP_FREE_SLOTS_MAX_RATIO=0.3"
 Environment="RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR=1.2"
 Environment="RUBY_GC_OLDMALLOC_LIMIT_MAX=67108864"
-ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 20 -q default,1 -q push,1 -q pull,1
+ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 20 -q default,1 -q push,1 -q pull,1 -q mailers,1
 
 4.mastodonサービスを再起動する。
 # systemctl daemon-reload
