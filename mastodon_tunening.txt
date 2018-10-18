@@ -156,6 +156,11 @@ DB_PORT=6432        ※ここも変更する
 上記bgBouncerを導入するのが前提になると思う。
 サービスの設定を最小稼働用に見直すみたい。
 
+また併せてjmallocの導入も行う（関連設定は★印箇所）
+https://qiita.com/kumasun/items/bf4997f181f893130041
+emalloc は、標準ライブラリで定義されているmalloc, free 等のメモリアロケーションAPI。
+主にガベージコレクションを早く消化し、メモリリークを防止する働きがあるらしい。
+
 補足：
 ・シングルコアの場合は更にrabyのファイルで処理を変更する方法もあるけど
   うちはマルチコアなのでやらなかった。
@@ -165,7 +170,25 @@ DB_PORT=6432        ※ここも変更する
 http://crakac.hatenablog.jp/entry/2017/12/10/121956
 
 
-1.mastodon webサービスの調整。
+1.jemallocをインストールする。
+# yum install jemalloc
+# ls -la /usr/lib64/libjemalloc.so.1
+とにかくlibjemalloc*を探す。
+
+2.rubyをリコンパイルする。
+# su - mastodon
+$ cd live
+$ rbenv install --list
+rubyのバージョンの確認
+
+$ RUBY_CONFIGURE_OPTS=--with-jemalloc rbenv install 2.5.1
+2.5.1はrubyの最新バージョンに置き換える（無印のラストが最新安定版？）。
+
+$ rbenv global 2.5.1
+使用するrubyのバージョンを指定する。（念のため）
+
+
+2.mastodon webサービスの調整。
 # vim /etc/systemd/system/mastodon-web.service
 ......
 Environment="PORT=3000"
@@ -178,13 +201,14 @@ Environment="RUBY_GC_HEAP_FREE_SLOTS_MIN_RATIO=0.1"
 Environment="RUBY_GC_HEAP_FREE_SLOTS_MAX_RATIO=0.3"
 Environment="RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR=1.2"
 Environment="RUBY_GC_OLDMALLOC_LIMIT_MAX=67108864"
+Environment="LD_PRELOAD=[jmallocファイルまでの絶対パス]"★
 ......
 
-2.mastodon ストリームサービスの調整。
+3.mastodon ストリームサービスの調整。
 # vim /etc/systemd/system/mastodon-streaming.service
 ※エラーが出たので今回はいじりません。
 
-3.mastodon sidekiqサービスの調整。
+4.mastodon sidekiqサービスの調整。
 # vim /etc/systemd/system/mastodon-sidekiq.service
 Environment="DB_POOL=5"
 ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 5 -q default -q mailers -q pull -q push
@@ -197,14 +221,15 @@ Environment="RUBY_GC_HEAP_FREE_SLOTS_MIN_RATIO=0.1"
 Environment="RUBY_GC_HEAP_FREE_SLOTS_MAX_RATIO=0.3"
 Environment="RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR=1.2"
 Environment="RUBY_GC_OLDMALLOC_LIMIT_MAX=67108864"
+Environment="LD_PRELOAD=[jmallocファイルまでの絶対パス]"★
 ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 20 -q default,1 -q push,1 -q pull,1 -q mailers,1
 
-4.mastodonサービスを再起動する。
+5.mastodonサービスを再起動する。
 # systemctl daemon-reload
 # systemctl restart mastodon*
    ※デーモンを先に再起動しないと怒られる
 
-5.スワップパラメータの調整。
+6.スワップパラメータの調整。
 値は0から100まででデフォルトは60。大きいほどよくスワップする。
 0にするとRAMを使いきるまでスワップしない。
 100だとパフォーマンスに悪影響を及ぼすレベルでガンガンスワップする。
@@ -293,6 +318,5 @@ noのままであれば5でがんばってパスを通すこと。（どうや�
 その他：
 何らかの不手際でリメイクするときはmakeファイルをクリアすること。
 # make clean
-
 
 
