@@ -18,6 +18,10 @@ mastodon運用時によく使うコマンドや技をまとめます。
 ◆mastodonインスタンス爆破→再建
 ◆mastodonインスタンスの閉じ方（提案）
 ◆削除されたリモートアカウントを自分のdbから削除する
+◆メールサーバ postfixのセキュリティ強化：smtps化
+◆ファイアーウォールの操作
+◆postgreのアップデート手順
+◆rubyアップデート手順
 ◆用語
 
 
@@ -43,7 +47,7 @@ mastodon運用時によく使うコマンドや技をまとめます。
 # vim /etc/nginx/conf.d/https.conf
 
 再起動
-# sudo nginx -s reload    ※sudoいらないのかな？
+# nginx -s reload
 
 
 ◆mastodonサービス関係
@@ -153,8 +157,8 @@ DockerとNon-Docker、環境によって手順が異なることに留意する�
 （うちはどうやらNon-Dockerらしい）
 
 一般的なコマンド：
-gem install bundler 
-bundle install --deployment --without development test 
+gem install bundler
+bundle install --deployment --without development test
 yarn install 
 RAILS_ENV=production bundle exec rails db:migrate
 RAILS_ENV=production bundle exec rake mastodon:maintenance:add_static_avatars
@@ -368,6 +372,208 @@ Scoped order is ignored, it's forced to be batch order.
 
 
 -----------------------
+＜メールサーバ postfixのセキュリティ強化：smtps化＞
+
+※記載中
+
+
+1.ファイアーウォールでsmtpsで使うポートを開けておく。
+参考：https://knowledge.sakura.ad.jp/10583/
+
+# firewall-cmd --list-all
+# firewall-cmd --add-port=***/tcp --zone=public --permanent
+# firewall-cmd --reload
+# firewall-cmd --list-all
+
+2. mastosonのconfig .env.productionのメール設定を以下のようにします。
+# cd /home/mastodon/live
+# cat .env.production > env.production.backup  とかでバックアップ(不要なら飛ばす)
+# vim .env.production
+
+# E-mail configuration
+SMTP_SERVER=127.0.0.1  # ホストのIPアドレス。自鯖内のpostfixを指定するので。
+SMTP_PORT=***          # 1で開けたポート番号
+SMTP_LOGIN=mastodon    # mastodonユーザ(centos)
+SMTP_PASSWORD=[]       # 同パスワード
+                         デフォルトだと無設定になってるかもなので予めリセットしておく
+                         或いは別でメール送信用ユーザを用意してもいい。
+SMTP_FROM_ADDRESS=     # 送信先として設定されるアドレス
+                         通常はmastodon@[ドメイン名]となる
+SMTP_AUTH_METHOD=plain
+SMTP_OPENSSL_VERIFY_MODE=none
+SMTP_ENABLE_STARTTLS_AUTO=true
+
+3.postfixのコンフィグを以下のようにする。
+# cd /etc/postfix
+# vim main.cf
+
+###基本
+mydomain=ドメイン名              # ドメイン名
+myhostname=メールサーバーの名前  # サブドメインも指定できる(MXレコードに準ずる？)
+home_mailbox=maildir/            # メールボックス(いるのかな？)
+
+###送信設定
+inet_interfaces = localhost [ホストIP]
+mynetworks = 127.0.0.0/8 [ホストIP(*.*.0.0)]/16
+
+4.mastodon sidekiqとpostfixの再起動と確認。
+# systemctl restart mastodon-sidekiq
+# systemctl reload postfix
+# systemctl restart postfix
+
+# systemctl status mastodon-sidekiq
+# systemctl status postfix.service
+
+エラーがでてなければOK。
+
+
+
+
+
+$ sendmail foo@foo.com  # 送りたいメールアドレスを指定します
+from:bar@bar.com        # 差出人(From)ヘッダを指定します
+to:foo@foo.com          # 宛先(To)ヘッダを指定します
+subject:テスト送信      # 件名(Subject)ヘッダを指定します
+テスト送信してみました。# 内容(Body)を記入します
+.                       # Bodyの入力が終わったら「.」を入力します
+
+
+
+sudo alternatives --config mta
+
+
+
+-----------------------
+＜ファイアーウォールの操作＞
+
+ファイアーウォールが動作しているかを見る。
+# firewall-cmd --state
+
+設定一覧を見る。
+# firewall-cmd --list-all
+
+ポートを開ける。
+# firewall-cmd --add-port=***/tcp --zone=public --permanent
+
+ポートを閉じる。
+# firewall-cmd --remove-port=***/tcp --zone=public --permanent
+
+ファイアーウォール設定をリロードする
+# firewall-cmd --reload
+
+
+-----------------------
+＜postgreのアップデート手順＞
+
+※記載中
+
+
+
+http://beeete2.hatenablog.jp/entry/2017/02/18/172304
+https://pgsql-jp.github.io/jpug-doc/9.6.5/postgresql-9.6.5-A4.pdf
+
+★はメジャーアップデートの際の手順
+
+1.nginxとmastodonを止めてバックアップする。
+# systemctl stop mastodon*
+# service nginx stop
+
+postgres権限で作業する。
+# su - postgres
+$ mkdir work
+$ pg_dumpall --clean --username=postgres --no-owner > work/backup_pg96_dumpall.dump
+パスワード5回くらい聞いてくる（DB数分？）
+
+2.最新のpostgresqlをダウンロードする。
+https://www.postgresql.org/download/
+でリポジトリを確認。
+
+root権限で作業するらしい。
+$ exit
+# yum install [リポジトリのアドレス]
+# yum list | grep postgresql96
+レポジトリがインストールされたか確認する
+
+3.インストールする。
+# yum install postgresql96-server
+
+4.psqlとpg_dumpが9.6を参照しているか確認する
+# alternatives --display pgsql-psql
+# alternatives --display pgsql-pg_dump
+
+5.configの初期設定をする。★
+# PGSETUP_INITDB_OPTIONS="--encoding=UTF8 --no-locale" /usr/pgsql-9.6/bin/postgresql96-setup initdb
+
+6.postgreを再起動する。
+# systemctl enable postgresql-9.6
+# systemctl start postgresql-9.6
+
+7.リストアする。
+# su - postgres
+$ psql -d postgres -f work/backup_pg96_dumpall.dump 2>&1 | tee work/restored.log
+
+8.自動起動の設定を行う。★
+$ systemctl disable postgresql-9.4
+$ systemctl enable postgresql-9.6
+
+正しく設定されているか確認する
+$ systemctl list-unit-files --type=service | grep postgresql
+
+PostgreSQL 9.4のレポジトリを無効にする
+$ sed -i -e 's|enabled=1|enabled=0|g' /etc/yum.repos.d/pgdg-94-centos.repo
+
+9.nginxを起動する。
+$ exit
+# service nginx start
+# systemctl start mastodon*
+# systemctl status nginx*
+# systemctl status mastodon*
+サービスの状態を確認する。
+
+
+-----------------------
+＜rubyアップデート手順＞
+
+まずruby-buildが入っていることが前提になります。
+入っていないと正確なバージョンが表示できなかったり、バージョンリストが取得できないようです。
+（さくらのスクリプトでセットアップされた場合は入ってます）
+
+参考：
+https://qiita.com/Kaisyou/items/b51c9854bd040046d599
+
+1.mastodon権限に切り替える。
+# su - mastodon
+
+2.ruby-buildのインストールフォルダに移動する。
+$ cd /home/mastodon/.rbenv/plugins/ruby-build
+※not fontだったらruby-buildをinstallする(通常はinstallされていると思う)
+
+3.現在のバージョンを確認する。
+$ rbenv versions
+
+4.gitからバージョンリストを取得する。
+$ git pull
+
+5.インストールする。
+$ rbenv install -v [インストールしたいバージョン名]
+※2.5.3の場合
+  $ rbenv install -v 2.5.3
+
+6.バージョンを上げる。
+$ rbenv global [5項のバージョン名]
+
+7.pathを通す。（bash向け？）
+$ echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bash_profile
+$ echo 'eval "$(rbenv init -)"' >> ~/.bash_profile
+$ exec $SHELL -l
+
+8.現在のバージョンを確認する。
+$ rbenv versions
+
+* [5項のバージョン] に切り替わっていればOK。
+
+
+-----------------------
 ＜用語＞
 mastodon：ますとどん
 ドイツのIT技術者オイゲン・ロチコ氏 (Eugen Rochko)が開発した、SNSサービスソフトウェア。
@@ -409,6 +615,7 @@ Webアプリケーションの多くはCRUD処理を中核としているので�
 docker
 コンテナ型の仮想化環境を提供するオープンソースソフトウェア。
 アプリケーションを少ない資源で効率よく実行できる。
+
 
 
 
