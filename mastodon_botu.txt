@@ -21,6 +21,46 @@ Lucida（lucida3rd@mstdn.lucida-don.net）
 
 
 -----------------------
+＜branchの研究＞
+
+https://qiita.com/konitter/items/71da5b9b40c1d20a6a11
+
+
+
+
+
+
+
+
+
+
+
+◆stashにコメントを付ける
+$ git stash save "xxxxxx"
+
+
+https://qiita.com/konitter/items/71da5b9b40c1d20a6a11
+
+
+◆stashの中身を確認する場合
+$ git stash list
+  例：
+    stash@{0}: WIP on sub: a0d2f1b add fourth line
+    stash@{1}: WIP on sub: 1a61919 add second line
+    <stash名>: WIP on <stashを行ったブランチ名>: <ハッシュ> <コミットコメント>
+
+git stashの参考：
+https://exiz.org/20170430221314
+https://qiita.com/fukajun/items/41288806e4733cb9c342
+
+
+
+
+
+
+
+
+-----------------------
 ＜Node.jsの管理：nvmコマンド＞
 
 mastodonのリリースノートでNode.jsをアップデートするのに、curlからapt-getを起動する方法
@@ -147,5 +187,64 @@ reboot だと起動が中途半端なのか上手くいかないのでコンソ�
 証明書の場所
 /etc/letsencrypt/live/
 
+
+
+-----------------------
+＜メールサーバ postfixのセキュリティ強化：smtps化＞
+
+※記載中
+
+
+1.ファイアーウォールでsmtpsで使うポートを開けておく。
+参考：https://knowledge.sakura.ad.jp/10583/
+
+# firewall-cmd --list-all
+# firewall-cmd --add-port=***/tcp --zone=public --permanent
+# firewall-cmd --reload
+# firewall-cmd --list-all
+
+2. mastosonのconfig .env.productionのメール設定を以下のようにします。
+# cd /home/mastodon/live
+# cat .env.production > env.production.backup  とかでバックアップ(不要なら飛ばす)
+# vim .env.production
+
+# E-mail configuration
+SMTP_SERVER=127.0.0.1  # ホストのIPアドレス。自鯖内のpostfixを指定するので。
+SMTP_PORT=***          # 1で開けたポート番号
+SMTP_LOGIN=mastodon    # mastodonユーザ(centos)
+SMTP_PASSWORD=[]       # 同パスワード
+                         デフォルトだと無設定になってるかもなので予めリセットしておく
+                         或いは別でメール送信用ユーザを用意してもいい。
+SMTP_FROM_ADDRESS=     # 送信先として設定されるアドレス
+                         通常はmastodon@[ドメイン名]となる
+SMTP_AUTH_METHOD=plain
+SMTP_OPENSSL_VERIFY_MODE=none
+SMTP_ENABLE_STARTTLS_AUTO=true
+
+3.postfixのコンフィグを以下のようにする。
+# cd /etc/postfix
+# vim main.cf
+
+###基本
+mydomain=ドメイン名              # ドメイン名
+myhostname=メールサーバーの名前  # サブドメインも指定できる(MXレコードに準ずる？)
+home_mailbox=maildir/            # メールボックス(いるのかな？)
+
+###送信設定
+inet_interfaces = localhost [ホストIP]
+mynetworks = 127.0.0.0/8 [ホストIP(*.*.0.0)]/16
+
+4.mastodon sidekiqとpostfixの再起動と確認。
+# systemctl restart mastodon-sidekiq
+# systemctl reload postfix
+# systemctl restart postfix
+
+# systemctl status mastodon-sidekiq
+# systemctl status postfix.service
+
+エラーがでてなければOK。
+
+
+sudo alternatives --config mta
 
 

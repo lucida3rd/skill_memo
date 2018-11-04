@@ -1,0 +1,660 @@
+-----------------------
+mastodon 運用メモ
+
+Lucida（lucida3rd@mstdn.lucida-don.net）
+-----------------------
+＜概要＞
+mastodon運用時によく使うコマンドや技をまとめます。
+
+◆よく見るフォルダ・よく使うコマンド
+◆mastodonバージョンアップ手順
+◆mastodonプリコンパイル
+◆mastodonの連合TL仕様（個人見解
+◆Node.jsのグローバル更新
+◆SSL証明書の編集：サブドメインの追加
+◆ターミナルソフトからのアクセス
+◆FTPでのアップロード（WinSCAP）
+◆nginxがnginx: [error] open()で起動できない場合の対処
+◆mastodonインスタンス爆破→再建
+◆mastodonインスタンスの閉じ方（提案）
+◆削除されたリモートアカウントを自分のdbから削除する
+◆メールサーバ postfixのセキュリティ強化：smtps化
+◆ファイアーウォールの操作
+◆postgreのアップデート手順
+◆rubyアップデート手順
+◆yarnアップデート手順
+◆用語
+
+
+
+---------------------------------
+＜注意事項＞
+---------------------------------
+・斜め読みしないで、各メモの効果、手順をよく確認してください。
+  よくわかんないうちは使用しないでください。
+・各メモには元ソースのリンクを貼り付けてますので、
+  よくわかんないときはそちらも合わせて確認してください。
+・このメモを使用したことによる不具合、損害について当方は責任を持ちません。
+  全て自己責任でお願いします。
+・当メモの質問は受け付けません。自己対応でお願いします。
+
+
+
+---------------------------------
+＜よく見るフォルダ・よく使うコマンド＞
+
+◆nginx関係
+コンフィグ
+# vim /etc/nginx/conf.d/https.conf
+
+再起動
+# nginx -s reload
+
+
+◆mastodonサービス関係
+mastodonコンフィグ
+# vim /home/mastodon/live/.env.production
+
+mastodonのホーム
+# cd /home/mastodon/live
+
+サービス起動
+# systemctl start mastodon*
+サービス停止
+# systemctl stop mastodon*
+サービス再起動
+# systemctl restart mastodon*
+サービス状態の確認
+# systemctl status mastodon*
+
+
+◆rails・s3バケツ関係
+※全てmastodon権限、mastodon/live配下で実行すること。
+
+amazon s3/wasabi バケットの手動同期
+$ aws s3 sync public/system/ s3://[バケット名]/ --endpoint-url=https://s3.wasabisys.com
+
+7日以前の画像キャッシュ（とそれのトゥート）の削除
+$ RAILS_ENV=production bundle exec rake mastodon:media:remove_remote
+
+アバターの取り直し（高負荷）
+$ RAILS_ENV=production bundle exec rake mastodon:media:redownload_avatars
+リモートユーザの場合
+$ RAILS_ENV=production bundle exec rails mastodon:media:redownload_avatars
+
+管理者化
+$ RAILS_ENV=production bundle exec rails mastodon:make_admin USERNAME=<ユーザID>
+
+権限の剥奪（一般ユーザ化）
+$ RAILS_ENV=production bundle exec rails mastodon:revoke_staff USERNAME=<ユーザID>
+
+
+localhost:4000
+
+
+◆CentOS
+ディレクトリ配下
+# ls -la
+
+現在のパス
+# pwd
+
+エラーログ
+# cd /var/spool/mail
+
+フォルダ以下の容量
+# du -h -d 1 live/public/system/
+
+ディスク容量
+# df
+
+3秒ごとにOSで利用しているプロセスの数や状態、またOS全体のシステムリソース状況
+# top
+　%CPU..CPU使用率
+　%MEM..メモリ利用率
+　左から7番目の「S」と書かれた列..プロセスの状態
+　　R->Running(実行状態もしくは実行可能状態)
+　　S->Sleeping(スリープ状態。ネットワークを介したデータ送受信の際もこのステータス)
+　　D->Uninterruptible sleep(IO待ち)
+　※プロセス状態がDの状態が続いてるプロセスがあればIO待ちによってパフォーマンス遅延が発生している可能性がある
+
+メモリに特化して詳細を表示
+# free
+　Mem行のfree列の値は 何の用途にも使っていない物理メモリ量
+
+
+
+-----------------------
+＜mastodonバージョンアップ手順＞
+参考：https://knowledge.sakura.ad.jp/8683/
+
+1.mastodon権限にログインする。
+# su - mastodon
+$ cd live
+
+2.リリースされてるブランチの確認。
+$ git fetch --tags
+
+3.インストールされているバージョンがv1.6.0、
+提供されている最新バージョンがv1.6.1として、
+v1.6.0からv1.6.1へのバージョンアップを行う仮定で手順を記載。
+$ git checkout v1.6.1  //ブランチをv1.6.1に切り替える
+$ git stash pop        //スタッシュをして古いスタッシュを消す(いるのかな)
+$ git branch           //ブランチの一覧を表示する
+
+  以下のように表示されればbranchの移動に成功している。
+$ git branch
+* (detached from v1.6.1)
+  master
+
+※ソースコードをいじってる場合は、まずbranchをmasterに切り替える必要がある。
+　詳しくは＜branchの管理＞へ
+
+4.Mastodonのバージョンアップに必要なコマンドを入力していく。
+コマンドはmastodonのRelease Noteに書いてある。
+DockerとNon-Docker、環境によって手順が異なることに留意する。
+（うちはどうやらNon-Dockerらしい）
+
+一般的なコマンド：
+$ gem install bundler
+$ bundle install --deployment --without development test
+$ yarn install
+$ RAILS_ENV=production bundle exec rails db:migrate
+$ RAILS_ENV=production bundle exec rails assets:precompile
+
+
+5.Mastodonをリスタートし、バージョンアップを完了させる。
+$ exit
+# systemctl restart mastodon*
+# systemctl status mastodon*
+
+mastodon-web.service
+mastodon-streaming.service
+mastodon-sidekiq.service
+３つのサービスがActiveであることを確認する。
+
+
+-----------------------
+＜mastodonプリコンパイル＞
+# su - mastodon
+$ bundle exec rails assets:precompile RAILS_ENV=production
+$ exit
+# systemctl restart mastodon*
+
+
+-----------------------
+＜branchの管理＞
+
+※ちょっと自信がない...
+
+gitのコードは同じリポジトリをbranchを利用して複数のユーザが並列して編集することができる。
+mastodonも然り。mastodonの場合、masterをソースコード改造すると、アップデートするときに
+チェックサムエラーになってしまう。ので、改造する前にbranchを切っておくと戻すのがラクになる。
+
+1.branchを切って作業する
+  v1.6.1testというbranchを切って作業する場合。
+$ git branch v1.6.1test   //ブランチを作成する
+$ git checkout v1.6.1test //作成したブランチに切り替える
+$ git branch              //ブランチの一覧を表示する
+  これでソースコードが改造できる。
+
+2.branchをmasterに切り替える
+$ git checkout v1.6.1     //元のmastodonソースコードに切り替える
+$ git branch              //ブランチの一覧を表示する
+
+※バージョンアップしたあと、ソースコード改造部分を再マージする方法ってあるのかな。
+
+
+-----------------------
+＜mastodonの連合TL仕様（個人見解＞
+自分のインスタンス上からの見た目で、連合TLに表示されるトゥートは以下の通り。
+・自インスタンスのユーザがおこなった公開トゥート
+・自インスタンスのユーザがブーストした公開トゥート（リモートユーザ含める）
+
+というところから、能動的に連合TLを活性させるには。
+・自インスタンスのユーザのトゥートを促進させる。
+・自インスタンスのアカウントで、よくブーストするユーザをフォローしておく。
+　2番目については自分でアカウントを建てれば簡単にできそう。
+
+
+
+-----------------------
+＜Node.jsのグローバル更新＞
+
+https://qiita.com/Yorinton/items/00ad34f3f902ed41c12f
+
+nコマンドを使ったアップデート。
+この方法だとnvmなどで切り替えできなくてグローバル的にアップデートされる。
+mastodonではこの方法でならアップデートが楽になりそう。
+
+1. nをインストールする
+# npm install -g n
+
+2. Node.jsをアップデートする
+# n stable     安定版
+# n latest     最新版
+
+sudoの設定をすれば効くらしい。
+この場合、グローバルアップデートにはならない？（わからん）
+
+
+
+-----------------------
+＜SSL証明書の編集：サブドメインの追加＞
+スタートアップスクリプトではLet's EmcryptのSSL証明書も作成されるが、
+mastodonのドメインの登録のみで、サブドメインなどでアクセスすると証明書エラーとなる。
+これを解決するため、証明書の更新（サブドメインの追加）をおこなう。
+
+参考：
+https://qiita.com/chamaharun/items/566c78bb8a13b4c2bc16
+
+https://letsencrypt.jp/usage/#ExecClientSoftware
+
+
+1.certbotをインストールする
+cd /root
+yum -y install certbot --enablerepo=epel
+yum install git
+git clone https://github.com/certbot/certbot.git
+cd certbot
+
+2.上記手順だとurllib3が書き換わるのでインストールしなおす（なんとかなんないのかなこれ..）
+# pip install --upgrade --force-reinstall 'requests==2.6.0' urllib3
+
+
+証明書の発行：サブドメインなしの場合
+# certbot certonly --webroot -w [ドメインのカレントフォルダ] -d [ドメイン名]
+
+証明書の発行：サブドメインありの場合
+-dオプションで関連付けられる。
+# certbot certonly --webroot -w [ドメインのカレントフォルダ] -d [ドメイン名] -d[サブドメイン1] -d [サブドメイン1]
+
+証明書の発行：別カレントのサブドメイン
+-wオプションで関連付けられる。
+# certbot certonly --webroot -w [ドメインのカレントフォルダ] -d [ドメイン名] -w [サブドメインのカレントフォルダ] -d [サブドメイン1]
+
+
+4.nginxを再起動する。
+# nginx -s reload
+
+
+証明書の場所
+/etc/letsencrypt/live/
+
+
+
+-----------------------
+＜ターミナルソフトからのアクセス＞
+TeraTermからでもいいけど、dosのプロンプトからのがやりやすいかも。
+
+root@<ホストアドレス>
+管理者のパスワード
+
+
+-----------------------
+＜FTPでのアップロード（WinSCAP）＞
+WinScapに秘密鍵ファイルを認識させる
+「設定」－「SSH」－「認証」
+秘密鍵
+<ユーザディレクトリ>\.ssh\id_rsa.ppk
+
+ユーザ：root
+ホスト：ホストアドレス
+パスフレーズ：管理者のパスワード
+
+
+-----------------------
+＜nginxがnginx: [error] open()で起動できない場合の対処＞
+
+1.nginxサービスを止める。
+# service nginx stop
+
+2.nginx関係のプロセスを見つける。
+# ps aux | grep nginx
+
+3.でてきたプロセスをすべてころす。
+# systemctl kill -s 9 [サービス名]
+サービス名..例えば nginx.service
+
+4.nginxを起動する。
+# service nginx start
+
+5.サービスの状態を確認する。
+# systemctl status nginx*
+
+activeになっていればOK。
+
+
+
+-----------------------
+＜mastodonインスタンス爆破→再建＞
+mastodonインスタンスを一回潰して、同じ手順で再開するときの動作要綱について。
+
+結論として、同じドメイン、同じアカウントでの復活は可能。
+ただし、接続している他のインスタンスのキューが蓄積したり、エラーがでるので、影響のあることを念頭に入れること。
+こちらのsidekiqには待機キューが大量に蓄積するのが見えるはず。
+おそらくはインスタンス間でなんらかの同期処理をやってると思われる。
+
+sidekiqのログとか理解してないので詳しくは不明だが。
+・同じドメイン名、アカウント名でインスタンス立て直すと、sidekiqの（連合TLのトゥート）が大量に蓄積する。
+・蓄積したキュー消しても再度蓄積していく。
+・キューが蓄積してる間は、トゥート、フォローなどはできない。
+・連合の接続はそのまま残ってた。
+
+
+
+-----------------------
+＜mastodonインスタンスの閉じ方（提案）＞
+参考記事これ：
+https://qiita.com/kumasun/items/7aa50a7b1b6d90e322fc
+
+1.1～3でnginxでHTTPステータスコード：410を吐かせる。
+  sidekiqのアクセスを止めさせる効果があるとか。
+　# vim /etc/nginx/conf.d/https.conf
+
+location / {
+    root /home/mastodon/live/public;
+    return 410;
+}
+※他と被らないよう注意すること。
+
+2.nginxを再起動する。
+　# sudo nginx -s reload
+
+3.mastodonでログインする。
+  # su - mastodon
+  # cd /home/mastodon/live
+
+4.Railsコンソールを起動する。
+  $ bundle exec rails console -e production
+
+5.ローカルユーザを全てサスペンド（停止）する。
+  > Account.where(domain: nil).partitioned.find_each do |account|
+  >   printf "%s suspending...\n", account.username
+  >   SuspendAccountService.new.call(account)
+  >   account.destroy()
+  > end; 0
+
+Scoped order is ignored, it's forced to be batch order.
+がでればOK。
+
+6.exitでコンソールを抜ける。
+  sidekiqのキューが溜まると思うので7への操作は間を置くこと。
+  ※確認ができない
+
+以上で鯖を閉じられると思う。
+
+
+-----------------------
+＜削除されたリモートアカウントを自分のdbから削除する＞
+垢削除されたり、インスタンスを閉じられて停止されたアカウントを自分のdbから削除する。
+
+1.mastodonでログインする。
+  # su - mastodon
+  # cd /home/mastodon/live
+
+2.リモートインスタンスから自分のアカウントの存在を消す。
+  $ RAILS_ENV=production bundle exec rake mastodon:maintenance:purge_removed_accounts -f
+  後ろの-fはオプションで、削除問い合わせをなくす。
+
+
+-----------------------
+＜メールサーバ postfixのセキュリティ強化：smtps化＞
+
+※記載中
+
+
+1.ファイアーウォールでsmtpsで使うポートを開けておく。
+参考：https://knowledge.sakura.ad.jp/10583/
+
+# firewall-cmd --list-all
+# firewall-cmd --add-port=***/tcp --zone=public --permanent
+# firewall-cmd --reload
+# firewall-cmd --list-all
+
+2. mastosonのconfig .env.productionのメール設定を以下のようにします。
+# cd /home/mastodon/live
+# cat .env.production > env.production.backup  とかでバックアップ(不要なら飛ばす)
+# vim .env.production
+
+# E-mail configuration
+SMTP_SERVER=127.0.0.1  # ホストのIPアドレス。自鯖内のpostfixを指定するので。
+SMTP_PORT=***          # 1で開けたポート番号
+SMTP_LOGIN=mastodon    # mastodonユーザ(centos)
+SMTP_PASSWORD=[]       # 同パスワード
+                         デフォルトだと無設定になってるかもなので予めリセットしておく
+                         或いは別でメール送信用ユーザを用意してもいい。
+SMTP_FROM_ADDRESS=     # 送信先として設定されるアドレス
+                         通常はmastodon@[ドメイン名]となる
+SMTP_AUTH_METHOD=plain
+SMTP_OPENSSL_VERIFY_MODE=none
+SMTP_ENABLE_STARTTLS_AUTO=true
+
+3.postfixのコンフィグを以下のようにする。
+# cd /etc/postfix
+# vim main.cf
+
+###基本
+mydomain=ドメイン名              # ドメイン名
+myhostname=メールサーバーの名前  # サブドメインも指定できる(MXレコードに準ずる？)
+home_mailbox=maildir/            # メールボックス(いるのかな？)
+
+###送信設定
+inet_interfaces = localhost [ホストIP]
+mynetworks = 127.0.0.0/8 [ホストIP(*.*.0.0)]/16
+
+4.mastodon sidekiqとpostfixの再起動と確認。
+# systemctl restart mastodon-sidekiq
+# systemctl reload postfix
+# systemctl restart postfix
+
+# systemctl status mastodon-sidekiq
+# systemctl status postfix.service
+
+エラーがでてなければOK。
+
+
+
+
+
+$ sendmail foo@foo.com  # 送りたいメールアドレスを指定します
+from:bar@bar.com        # 差出人(From)ヘッダを指定します
+to:foo@foo.com          # 宛先(To)ヘッダを指定します
+subject:テスト送信      # 件名(Subject)ヘッダを指定します
+テスト送信してみました。# 内容(Body)を記入します
+.                       # Bodyの入力が終わったら「.」を入力します
+
+
+
+sudo alternatives --config mta
+
+
+
+-----------------------
+＜ファイアーウォールの操作＞
+
+ファイアーウォールが動作しているかを見る。
+# firewall-cmd --state
+
+設定一覧を見る。
+# firewall-cmd --list-all
+
+ポートを開ける。
+# firewall-cmd --add-port=***/tcp --zone=public --permanent
+
+ポートを閉じる。
+# firewall-cmd --remove-port=***/tcp --zone=public --permanent
+
+ファイアーウォール設定をリロードする
+# firewall-cmd --reload
+
+
+-----------------------
+＜postgreのアップデート手順＞
+
+※記載中
+
+
+
+http://beeete2.hatenablog.jp/entry/2017/02/18/172304
+https://pgsql-jp.github.io/jpug-doc/9.6.5/postgresql-9.6.5-A4.pdf
+
+★はメジャーアップデートの際の手順
+
+1.nginxとmastodonを止めてバックアップする。
+# systemctl stop mastodon*
+# service nginx stop
+
+postgres権限で作業する。
+# su - postgres
+$ mkdir work
+$ pg_dumpall --clean --username=postgres --no-owner > work/backup_pg96_dumpall.dump
+パスワード5回くらい聞いてくる（DB数分？）
+
+2.最新のpostgresqlをダウンロードする。
+https://www.postgresql.org/download/
+でリポジトリを確認。
+
+root権限で作業するらしい。
+$ exit
+# yum install [リポジトリのアドレス]
+# yum list | grep postgresql96
+レポジトリがインストールされたか確認する
+
+3.インストールする。
+# yum install postgresql96-server
+
+4.psqlとpg_dumpが9.6を参照しているか確認する
+# alternatives --display pgsql-psql
+# alternatives --display pgsql-pg_dump
+
+5.configの初期設定をする。★
+# PGSETUP_INITDB_OPTIONS="--encoding=UTF8 --no-locale" /usr/pgsql-9.6/bin/postgresql96-setup initdb
+
+6.postgreを再起動する。
+# systemctl enable postgresql-9.6
+# systemctl start postgresql-9.6
+
+7.リストアする。
+# su - postgres
+$ psql -d postgres -f work/backup_pg96_dumpall.dump 2>&1 | tee work/restored.log
+
+8.自動起動の設定を行う。★
+$ systemctl disable postgresql-9.4
+$ systemctl enable postgresql-9.6
+
+正しく設定されているか確認する
+$ systemctl list-unit-files --type=service | grep postgresql
+
+PostgreSQL 9.4のレポジトリを無効にする
+$ sed -i -e 's|enabled=1|enabled=0|g' /etc/yum.repos.d/pgdg-94-centos.repo
+
+9.nginxを起動する。
+$ exit
+# service nginx start
+# systemctl start mastodon*
+# systemctl status nginx*
+# systemctl status mastodon*
+サービスの状態を確認する。
+
+
+-----------------------
+＜rubyアップデート手順＞
+
+まずruby-buildが入っていることが前提になります。
+入っていないと正確なバージョンが表示できなかったり、バージョンリストが取得できないようです。
+（さくらのスクリプトでセットアップされた場合は入ってます）
+
+参考：
+https://qiita.com/Kaisyou/items/b51c9854bd040046d599
+
+1.mastodon権限に切り替える。
+# su - mastodon
+
+2.ruby-buildのインストールフォルダに移動する。
+$ cd /home/mastodon/.rbenv/plugins/ruby-build
+※not fontだったらruby-buildをinstallする(通常はinstallされていると思う)
+
+3.現在のバージョンを確認する。
+$ rbenv versions
+
+4.gitからバージョンリストを取得する。
+$ git pull
+
+5.インストールする。
+$ rbenv install -v [インストールしたいバージョン名]
+※2.5.3の場合
+  $ rbenv install -v 2.5.3
+
+6.バージョンを上げる。
+$ rbenv global [5項のバージョン名]
+
+7.pathを通す。（bash向け？）
+$ echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bash_profile
+$ echo 'eval "$(rbenv init -)"' >> ~/.bash_profile
+$ exec $SHELL -l
+
+8.現在のバージョンを確認する。
+$ rbenv versions
+
+* [5項のバージョン] に切り替わっていればOK。
+
+
+-----------------------
+＜yarnアップデート手順＞
+
+mastodonアップデート中、bundle exec実行中にyarnのアップデートを促されたら（WARNNINGとして出力）
+yarnのアップデートを行うこと。
+コマンドはWARNNINGに記載されているが、念のため以下にも記載する。
+
+# su - mastodon
+$ cd live
+$ curl --compressed -o- -L https://yarnpkg.com/install.sh | bash
+
+
+-----------------------
+＜用語＞
+mastodon：ますとどん
+ドイツのIT技術者オイゲン・ロチコ氏 (Eugen Rochko)が開発した、SNSサービスソフトウェア。
+フリーソフトウェアであり、Linuxのクラウドサーバがあれば誰でも使用できる。
+ストリームタイムライン機能を持ち、自分や他のユーザが投稿内容がリアルタイムに流れる。
+twitterと違うのは、企業個人問わず誰でもmastodonサーバ（インスタンス）を建てられる点で、複数のインスタンスが存在する。
+そのため、1つのインスタンスに問題があっても、他のインスタンスでmastodonの利用を続けることができる。
+（アカウントはインスタンスごとに登録する必要がある）
+有志でmastodon APIも提供されており、mastodonで動くアプリケーションや、mastodonのクライアントも開発できる。
+
+mastodonが動く仕組み（lucida個人見解）
+あんまよく理解してないです。
+sidekiqがユーザやブラウザからのuriを実行し、Redisがsqlを中継、データの管理をpostgreSQLでおこなう。
+dockerを使うかは任意で、使うとコマンドの記述を短縮化できるが、実際はリソースを食うらしい。
+
+postgreSQL
+オープンソースのデータベースのひとつ。
+SQLで問い合わせできる。
+
+sidekiq
+Linuxで動作する非同期実行gem（カーネル）。
+バックエンドにはRailsが必要。
+
+Redis：Remote dictionary server
+メモリ上にKey-Valueストア(KVS)を構築することができるソフトウェアの一つ。
+KVSは任意の保存したいデータ(値：value)に対し、対応する一意の標識(キー：key)を設定し、
+これらをペアで保存するデータベースの一種で。Redisはコンピュータのメインメモリ上にKVSを構築し、
+外部のプログラムからデータの保存と読み出しができる。
+
+Rails：Ruby on Rails：
+スクリプト言語のRubyにより構築された、Webアプリケーション開発のためのフレームワーク。
+MVC（Model-View-Controller）アーキテクチャをサポートしており、データベースに関する処理を担うモデル、
+データの表示を行うビュー、それらを制御するコントローラの雛形を自動生成する機能を持っている。
+データの作成・読み込み・更新・削除(CRUD)のみを行うような単純なWebアプリケーションであれば、
+データテーブルの作成と雛形の自動生成を行うのみでほとんどの部分が開発できてしまう。
+Webアプリケーションの多くはCRUD処理を中核としているので、Ruby on Railsを使うことによって多くのコード
+の作成を自動化することができ、開発期間を短縮できる。
+
+docker
+コンテナ型の仮想化環境を提供するオープンソースソフトウェア。
+アプリケーションを少ない資源で効率よく実行できる。
+
+
+
+

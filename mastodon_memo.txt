@@ -6,23 +6,30 @@ Lucida（lucida3rd@mstdn.lucida-don.net）
 ＜概要＞
 mastodon運用時によく使うコマンドや技をまとめます。
 
-◆よく見るフォルダ・よく使うコマンド
-◆mastodonバージョンアップ手順
-◆mastodonプリコンパイル
-◆mastodonの連合TL仕様（個人見解
-◆Node.jsのグローバル更新
-◆SSL証明書の編集：サブドメインの追加
-◆ターミナルソフトからのアクセス
-◆FTPでのアップロード（WinSCAP）
-◆nginxがnginx: [error] open()で起動できない場合の対処
-◆mastodonインスタンス爆破→再建
-◆mastodonインスタンスの閉じ方（提案）
-◆削除されたリモートアカウントを自分のdbから削除する
-◆メールサーバ postfixのセキュリティ強化：smtps化
-◆ファイアーウォールの操作
-◆postgreのアップデート手順
-◆rubyアップデート手順
-◆用語
+よく使う
+　◆よく見るフォルダ・よく使うコマンド
+
+バージョンアップ操作
+　◆mastodonバージョンアップ手順
+　◆Node.jsのグローバル更新
+　◆postgreのアップデート手順
+　◆rubyアップデート手順
+　◆yarnアップデート手順
+　◆SSL証明書の更新
+
+運用テクニック
+　◆サーバへの接続
+　◆ファイアーウォールの操作
+　◆nginxがnginx: [error] open()で起動できない場合の対処
+　◆削除されたリモートアカウントを自分のdbから削除する
+
+インスタンスの再建・閉鎖
+　◆mastodonインスタンス爆破→再建
+　◆mastodonインスタンスの閉じ方（提案）
+
+仕様メモ
+　◆mastodonの連合TL仕様（個人見解
+　◆用語
 
 
 
@@ -69,26 +76,43 @@ mastodonのホーム
 
 ◆rails・s3バケツ関係
 ※全てmastodon権限、mastodon/live配下で実行すること。
+またv2.5.0から一部rakeコマンドが、bin/tootctlに移行した。
 
 amazon s3/wasabi バケットの手動同期
 $ aws s3 sync public/system/ s3://[バケット名]/ --endpoint-url=https://s3.wasabisys.com
 
-7日以前の画像キャッシュ（とそれのトゥート）の削除
-$ RAILS_ENV=production bundle exec rake mastodon:media:remove_remote
-
-アバターの取り直し（高負荷）
-$ RAILS_ENV=production bundle exec rake mastodon:media:redownload_avatars
-リモートユーザの場合
-$ RAILS_ENV=production bundle exec rails mastodon:media:redownload_avatars
+古いキャッシュ（とそれのトゥート）の削除
+$ RAILS_ENV=production bin/tootctl media remove
+日付を指定する場合
+$ RAILS_ENV=production bin/tootctl media remove --days=1
 
 管理者化
-$ RAILS_ENV=production bundle exec rails mastodon:make_admin USERNAME=<ユーザID>
-
+$ RAILS_ENV=production bin/tootctl accounts modify <ユーザID> --role admin
+モデレータ化
+$ RAILS_ENV=production bin/tootctl accounts modify <ユーザID> --role moderator
 権限の剥奪（一般ユーザ化）
-$ RAILS_ENV=production bundle exec rails mastodon:revoke_staff USERNAME=<ユーザID>
+$ RAILS_ENV=production bin/tootctl accounts modify <ユーザID> --role user
 
 
-localhost:4000
+◆ディレクトリ
+
+nginx configファイル
+　/etc/nginx/conf.d
+
+postfix設定ファイル
+　/etc/postfix
+
+Let's Encrupt証明書ファイル
+　/etc/letsencrypt/live
+
+cron設定ファイル
+　/etc/cron.d
+
+ログ類
+　/var/log
+
+スプーラ エラーログ(pythonとかもここ)
+　/var/spool/mail
 
 
 ◆CentOS
@@ -97,9 +121,6 @@ localhost:4000
 
 現在のパス
 # pwd
-
-エラーログ
-# cd /var/spool/mail
 
 フォルダ以下の容量
 # du -h -d 1 live/public/system/
@@ -121,74 +142,74 @@ localhost:4000
 # free
 　Mem行のfree列の値は 何の用途にも使っていない物理メモリ量
 
+環境変数の確認
+# env
+
+環境変数の追加
+# export XXX=aaa
+
+環境変数の削除
+# unset XXX
+  export XXX=""（空欄）では消えない
+
+
+◆sendmailのテスト
+$ sendmail foo@foo.com  # 送りたいメールアドレスを指定します
+from:bar@bar.com        # 差出人(From)ヘッダを指定します
+to:foo@foo.com          # 宛先(To)ヘッダを指定します
+subject:テスト送信      # 件名(Subject)ヘッダを指定します
+テスト送信してみました。# 内容(Body)を記入します
+.                       # Bodyの入力が終わったら「.」を入力します
 
 
 -----------------------
 ＜mastodonバージョンアップ手順＞
 参考：https://knowledge.sakura.ad.jp/8683/
 
-mastodon権限にログインする。
-su - mastodon
-cd live
+1.mastodon権限にログインする。
+# su - mastodon
+$ cd live
 
+2.gitから最新のリポジトリを引っ張り、タグを表示する。
+$ git fetch --tags
 
-リリースされてるブランチの確認。
-git fetch --tags
-
-
-インストールされているバージョンがv1.6.0、
+3.ローカルを退避して、ブランチを切り替えたあと、退避を戻す。
 提供されている最新バージョンがv1.6.1として、
 v1.6.0からv1.6.1へのバージョンアップを行う仮定で手順を記載。
-v1.6.1（バージョンアップする）のbranchに移動。
+$ git status           //ローカルリポジトリの内容を確認する
+$ git stash save       //変更を一時退避する
+$ git checkout v1.6.1  //ブランチをv1.6.1に切り替える
+$ git stash pop        //退避を戻して、退避を消す
+$ git branch           //ブランチの一覧を表示する
 
-git checkout v1.6.1
-git stash pop
-git branch
-
-以下のように表示されればbranchの移動に成功している。
+  以下のように表示されればbranchの移動に成功している。
 $ git branch
 * (detached from v1.6.1)
   master
 
-
-Mastodonのバージョンアップに必要なコマンドを入力していく。
-コマンドはRelease Noteに書いてある。
+4.Mastodonのバージョンアップに必要なコマンドを入力していく。
+コマンドはmastodonのRelease Noteに書いてある。
 DockerとNon-Docker、環境によって手順が異なることに留意する。
 （うちはどうやらNon-Dockerらしい）
 
 一般的なコマンド：
-gem install bundler
-bundle install --deployment --without development test
-yarn install 
-RAILS_ENV=production bundle exec rails db:migrate
-RAILS_ENV=production bundle exec rake mastodon:maintenance:add_static_avatars
-RAILS_ENV=production bundle exec rails assets:precompile
+$ gem install bundler
+$ bundle install --deployment --without development test
+$ yarn install
+$ RAILS_ENV=production bundle exec rails db:migrate
+$ RAILS_ENV=production bundle exec rails assets:precompile
 
 
-Mastodonをリスタートし、バージョンアップを完了させる。
-exit
-systemctl restart mastodon*
+5.Mastodonをリスタートし、バージョンアップを完了させる。
+$ exit
+# systemctl restart mastodon*
+# systemctl status mastodon*
 
-
------------------------
-＜mastodonプリコンパイル＞
-su - mastodon
-bundle exec rails assets:precompile RAILS_ENV=production
-exit
-systemctl restart mastodon*
-
-
------------------------
-＜mastodonの連合TL仕様（個人見解＞
-自分のインスタンス上からの見た目で、連合TLに表示されるトゥートは以下の通り。
-・自インスタンスのユーザがおこなった公開トゥート
-・自インスタンスのユーザがブーストした公開トゥート（リモートユーザ含める）
-
-というところから、能動的に連合TLを活性させるには。
-・自インスタンスのユーザのトゥートを促進させる。
-・自インスタンスのアカウントで、よくブーストするユーザをフォローしておく。
-　2番目については自分でアカウントを建てれば簡単にできそう。
-
+mastodon-web.service
+mastodon-streaming.service
+mastodon-sidekiq.service
+３つのサービスがActiveであることを確認する。
+また、ここまでの画面でWARNNINGが出てないことも確認する。
 
 
 -----------------------
@@ -209,257 +230,6 @@ mastodonではこの方法でならアップデートが楽になりそう。
 
 sudoの設定をすれば効くらしい。
 この場合、グローバルアップデートにはならない？（わからん）
-
-
-
------------------------
-＜SSL証明書の編集：サブドメインの追加＞
-スタートアップスクリプトではLet's EmcryptのSSL証明書も作成されるが、
-mastodonのドメインの登録のみで、サブドメインなどでアクセスすると証明書エラーとなる。
-これを解決するため、証明書の更新（サブドメインの追加）をおこなう。
-
-参考：
-https://qiita.com/chamaharun/items/566c78bb8a13b4c2bc16
-
-https://letsencrypt.jp/usage/#ExecClientSoftware
-
-
-1.certbotをインストールする
-cd /root
-yum -y install certbot --enablerepo=epel
-yum install git
-git clone https://github.com/certbot/certbot.git
-cd certbot
-
-2.上記手順だとurllib3が書き換わるのでインストールしなおす（なんとかなんないのかなこれ..）
-# pip install --upgrade --force-reinstall 'requests==2.6.0' urllib3
-
-
-証明書の発行：サブドメインなしの場合
-# certbot certonly --webroot -w [ドメインのカレントフォルダ] -d [ドメイン名]
-
-証明書の発行：サブドメインありの場合
--dオプションで関連付けられる。
-# certbot certonly --webroot -w [ドメインのカレントフォルダ] -d [ドメイン名] -d[サブドメイン1] -d [サブドメイン1]
-
-証明書の発行：別カレントのサブドメイン
--wオプションで関連付けられる。
-# certbot certonly --webroot -w [ドメインのカレントフォルダ] -d [ドメイン名] -w [サブドメインのカレントフォルダ] -d [サブドメイン1]
-
-
-4.nginxを再起動する。
-# nginx -s reload
-
-
-証明書の場所
-/etc/letsencrypt/live/
-
-
-
------------------------
-＜ターミナルソフトからのアクセス＞
-TeraTermからでもいいけど、dosのプロンプトからのがやりやすいかも。
-
-root@<ホストアドレス>
-管理者のパスワード
-
-
------------------------
-＜FTPでのアップロード（WinSCAP）＞
-WinScapに秘密鍵ファイルを認識させる
-「設定」－「SSH」－「認証」
-秘密鍵
-<ユーザディレクトリ>\.ssh\id_rsa.ppk
-
-ユーザ：root
-ホスト：ホストアドレス
-パスフレーズ：管理者のパスワード
-
-
------------------------
-＜nginxがnginx: [error] open()で起動できない場合の対処＞
-
-1.nginxサービスを止める。
-# service nginx stop
-
-2.nginx関係のプロセスを見つける。
-# ps aux | grep nginx
-
-3.でてきたプロセスをすべてころす。
-# systemctl kill -s 9 [サービス名]
-サービス名..例えば nginx.service
-
-4.nginxを起動する。
-# service nginx start
-
-5.サービスの状態を確認する。
-# systemctl status nginx*
-
-activeになっていればOK。
-
-
-
------------------------
-＜mastodonインスタンス爆破→再建＞
-mastodonインスタンスを一回潰して、同じ手順で再開するときの動作要綱について。
-
-結論として、同じドメイン、同じアカウントでの復活は可能。
-ただし、接続している他のインスタンスのキューが蓄積したり、エラーがでるので、影響のあることを念頭に入れること。
-こちらのsidekiqには待機キューが大量に蓄積するのが見えるはず。
-おそらくはインスタンス間でなんらかの同期処理をやってると思われる。
-
-sidekiqのログとか理解してないので詳しくは不明だが。
-・同じドメイン名、アカウント名でインスタンス立て直すと、sidekiqの（連合TLのトゥート）が大量に蓄積する。
-・蓄積したキュー消しても再度蓄積していく。
-・キューが蓄積してる間は、トゥート、フォローなどはできない。
-・連合の接続はそのまま残ってた。
-
-
-
------------------------
-＜mastodonインスタンスの閉じ方（提案）＞
-参考記事これ：
-https://qiita.com/kumasun/items/7aa50a7b1b6d90e322fc
-
-1.1～3でnginxでHTTPステータスコード：410を吐かせる。
-  sidekiqのアクセスを止めさせる効果があるとか。
-　# vim /etc/nginx/conf.d/https.conf
-
-location / {
-    root /home/mastodon/live/public;
-    return 410;
-}
-※他と被らないよう注意すること。
-
-2.nginxを再起動する。
-　# sudo nginx -s reload
-
-3.mastodonでログインする。
-  # su - mastodon
-  # cd /home/mastodon/live
-
-4.Railsコンソールを起動する。
-  $ bundle exec rails console -e production
-
-5.ローカルユーザを全てサスペンド（停止）する。
-  > Account.where(domain: nil).partitioned.find_each do |account|
-  >   printf "%s をサスペンドしています...\n", account.username
-  >   SuspendAccountService.new.call(account)
-  >   account.destroy()
-  > end; 0
-
-Scoped order is ignored, it's forced to be batch order.
-がでればOK。
-
-6.exitでコンソールを抜ける。
-  sidekiqのキューが溜まると思うので7への操作は間を置くこと。
-  ※確認ができない
-
-以上で鯖を閉じられると思う。
-
-
------------------------
-＜削除されたリモートアカウントを自分のdbから削除する＞
-垢削除されたり、インスタンスを閉じられて停止されたアカウントを自分のdbから削除する。
-
-1.mastodonでログインする。
-  # su - mastodon
-  # cd /home/mastodon/live
-
-2.リモートインスタンスから自分のアカウントの存在を消す。
-  $ RAILS_ENV=production bundle exec rake mastodon:maintenance:purge_removed_accounts -f
-  後ろの-fはオプションで、削除問い合わせをなくす。
-
-
------------------------
-＜メールサーバ postfixのセキュリティ強化：smtps化＞
-
-※記載中
-
-
-1.ファイアーウォールでsmtpsで使うポートを開けておく。
-参考：https://knowledge.sakura.ad.jp/10583/
-
-# firewall-cmd --list-all
-# firewall-cmd --add-port=***/tcp --zone=public --permanent
-# firewall-cmd --reload
-# firewall-cmd --list-all
-
-2. mastosonのconfig .env.productionのメール設定を以下のようにします。
-# cd /home/mastodon/live
-# cat .env.production > env.production.backup  とかでバックアップ(不要なら飛ばす)
-# vim .env.production
-
-# E-mail configuration
-SMTP_SERVER=127.0.0.1  # ホストのIPアドレス。自鯖内のpostfixを指定するので。
-SMTP_PORT=***          # 1で開けたポート番号
-SMTP_LOGIN=mastodon    # mastodonユーザ(centos)
-SMTP_PASSWORD=[]       # 同パスワード
-                         デフォルトだと無設定になってるかもなので予めリセットしておく
-                         或いは別でメール送信用ユーザを用意してもいい。
-SMTP_FROM_ADDRESS=     # 送信先として設定されるアドレス
-                         通常はmastodon@[ドメイン名]となる
-SMTP_AUTH_METHOD=plain
-SMTP_OPENSSL_VERIFY_MODE=none
-SMTP_ENABLE_STARTTLS_AUTO=true
-
-3.postfixのコンフィグを以下のようにする。
-# cd /etc/postfix
-# vim main.cf
-
-###基本
-mydomain=ドメイン名              # ドメイン名
-myhostname=メールサーバーの名前  # サブドメインも指定できる(MXレコードに準ずる？)
-home_mailbox=maildir/            # メールボックス(いるのかな？)
-
-###送信設定
-inet_interfaces = localhost [ホストIP]
-mynetworks = 127.0.0.0/8 [ホストIP(*.*.0.0)]/16
-
-4.mastodon sidekiqとpostfixの再起動と確認。
-# systemctl restart mastodon-sidekiq
-# systemctl reload postfix
-# systemctl restart postfix
-
-# systemctl status mastodon-sidekiq
-# systemctl status postfix.service
-
-エラーがでてなければOK。
-
-
-
-
-
-$ sendmail foo@foo.com  # 送りたいメールアドレスを指定します
-from:bar@bar.com        # 差出人(From)ヘッダを指定します
-to:foo@foo.com          # 宛先(To)ヘッダを指定します
-subject:テスト送信      # 件名(Subject)ヘッダを指定します
-テスト送信してみました。# 内容(Body)を記入します
-.                       # Bodyの入力が終わったら「.」を入力します
-
-
-
-sudo alternatives --config mta
-
-
-
------------------------
-＜ファイアーウォールの操作＞
-
-ファイアーウォールが動作しているかを見る。
-# firewall-cmd --state
-
-設定一覧を見る。
-# firewall-cmd --list-all
-
-ポートを開ける。
-# firewall-cmd --add-port=***/tcp --zone=public --permanent
-
-ポートを閉じる。
-# firewall-cmd --remove-port=***/tcp --zone=public --permanent
-
-ファイアーウォール設定をリロードする
-# firewall-cmd --reload
 
 
 -----------------------
@@ -571,6 +341,215 @@ $ exec $SHELL -l
 $ rbenv versions
 
 * [5項のバージョン] に切り替わっていればOK。
+
+
+-----------------------
+＜yarnアップデート手順＞
+
+mastodonアップデート中、bundle exec実行中にyarnのアップデートを促されたら（WARNNINGとして出力）
+yarnのアップデートを行うこと。
+コマンドはWARNNINGに記載されているが、念のため以下にも記載する。
+
+# su - mastodon
+$ cd live
+$ curl --compressed -o- -L https://yarnpkg.com/install.sh | bash
+
+
+-----------------------
+＜サーバへの接続＞
+
+◆ターミナルソフト→鯖へ接続
+TeraTermからでもいいけど、dosのプロンプトからのがやりやすいかも。
+> ssh root@[ホストIPアドレス] -i [秘密鍵(拡張子がない)のパス]
+  例：ssh root@xxx.xxx.xxx.xxx -i C:\Users\User1\.ssh\id_kagi
+
+サーバ管理者のパスワード
+
+
+◆FTP接続（WinSCAP）
+WinScapに秘密鍵ファイルを認識させる
+「設定」－「SSH」－「認証」
+秘密鍵
+<ユーザディレクトリ>\.ssh\id_rsa.ppk
+
+ユーザ：root
+ホスト：ホストアドレス
+パスフレーズ：管理者のパスワード
+
+
+-----------------------
+＜ファイアーウォールの操作＞
+
+ファイアーウォールが動作しているかを見る。
+# firewall-cmd --state
+
+設定一覧を見る。
+# firewall-cmd --list-all
+
+ポートを開ける。
+# firewall-cmd --add-port=***/tcp --zone=public --permanent
+
+ポートを閉じる。
+# firewall-cmd --remove-port=***/tcp --zone=public --permanent
+
+ファイアーウォール設定をリロードする
+# firewall-cmd --reload
+
+
+-----------------------
+＜nginxがnginx: [error] open()で起動できない場合の対処＞
+
+1.nginxサービスを止める。
+# service nginx stop
+
+2.nginx関係のプロセスを見つける。
+# ps aux | grep nginx
+
+3.でてきたプロセスをすべてころす。
+# systemctl kill -s 9 [サービス名]
+サービス名..例えば nginx.service
+
+4.nginxを起動する。
+# service nginx start
+
+5.サービスの状態を確認する。
+# systemctl status nginx*
+
+activeになっていればOK。
+
+
+-----------------------
+＜削除されたリモートアカウントを自分のdbから削除する＞
+垢削除されたり、インスタンスを閉じられて停止されたアカウントを自分のdbから削除する。
+
+1.mastodonでログインする。
+  # su - mastodon
+  # cd /home/mastodon/live
+
+2.リモートインスタンスから自分のアカウントの存在を消す。
+  $ RAILS_ENV=production bundle exec rake mastodon:maintenance:purge_removed_accounts -f
+  後ろの-fはオプションで、削除問い合わせをなくす。
+
+
+-----------------------
+＜SSL証明書の編集：サブドメインの追加＞
+スタートアップスクリプトではLet's EmcryptのSSL証明書も作成されるが、
+mastodonのドメインの登録のみで、サブドメインなどでアクセスすると証明書エラーとなる。
+これを解決するため、証明書の更新（サブドメインの追加）をおこなう。
+
+参考：
+https://qiita.com/chamaharun/items/566c78bb8a13b4c2bc16
+
+https://letsencrypt.jp/usage/#ExecClientSoftware
+
+
+1.certbotをインストールする
+cd /root
+yum -y install certbot --enablerepo=epel
+yum install git
+git clone https://github.com/certbot/certbot.git
+cd certbot
+
+2.上記手順だとurllib3が書き換わるのでインストールしなおす（なんとかなんないのかなこれ..）
+# pip install --upgrade --force-reinstall 'requests==2.6.0' urllib3
+
+
+証明書の発行：サブドメインなしの場合
+# certbot certonly --webroot -w [ドメインのカレントフォルダ] -d [ドメイン名]
+
+証明書の発行：サブドメインありの場合
+-dオプションで関連付けられる。
+# certbot certonly --webroot -w [ドメインのカレントフォルダ] -d [ドメイン名] -d[サブドメイン1] -d [サブドメイン1]
+
+証明書の発行：別カレントのサブドメイン
+-wオプションで関連付けられる。
+# certbot certonly --webroot -w [ドメインのカレントフォルダ] -d [ドメイン名] -w [サブドメインのカレントフォルダ] -d [サブドメイン1]
+
+
+4.nginxを再起動する。
+# nginx -s reload
+
+
+証明書の場所
+/etc/letsencrypt/live/
+
+
+
+
+
+
+
+
+
+-----------------------
+＜mastodonインスタンス爆破→再建＞
+mastodonインスタンスを一回潰して、同じ手順で再開するときの動作要綱について。
+
+結論として、同じドメイン、同じアカウントでの復活は可能。
+ただし、接続している他のインスタンスのキューが蓄積したり、エラーがでるので、影響のあることを念頭に入れること。
+こちらのsidekiqには待機キューが大量に蓄積するのが見えるはず。
+おそらくはインスタンス間でなんらかの同期処理をやってると思われる。
+
+sidekiqのログとか理解してないので詳しくは不明だが。
+・同じドメイン名、アカウント名でインスタンス立て直すと、sidekiqの（連合TLのトゥート）が大量に蓄積する。
+・蓄積したキュー消しても再度蓄積していく。
+・キューが蓄積してる間は、トゥート、フォローなどはできない。
+・連合の接続はそのまま残ってた。
+
+
+
+-----------------------
+＜mastodonインスタンスの閉じ方（提案）＞
+参考記事これ：
+https://qiita.com/kumasun/items/7aa50a7b1b6d90e322fc
+
+1.1～3でnginxでHTTPステータスコード：410を吐かせる。
+  sidekiqのアクセスを止めさせる効果があるとか。
+　# vim /etc/nginx/conf.d/https.conf
+
+location / {
+    root /home/mastodon/live/public;
+    return 410;
+}
+※他と被らないよう注意すること。
+
+2.nginxを再起動する。
+　# sudo nginx -s reload
+
+3.mastodonでログインする。
+  # su - mastodon
+  # cd /home/mastodon/live
+
+4.Railsコンソールを起動する。
+  $ bundle exec rails console -e production
+
+5.ローカルユーザを全てサスペンド（停止）する。
+  > Account.where(domain: nil).partitioned.find_each do |account|
+  >   printf "%s suspending...\n", account.username
+  >   SuspendAccountService.new.call(account)
+  >   account.destroy()
+  > end; 0
+
+Scoped order is ignored, it's forced to be batch order.
+がでればOK。
+
+6.exitでコンソールを抜ける。
+  sidekiqのキューが溜まると思うので7への操作は間を置くこと。
+  ※確認ができない
+
+以上で鯖を閉じられると思う。
+
+
+-----------------------
+＜mastodonの連合TL仕様（個人見解＞
+自分のインスタンス上からの見た目で、連合TLに表示されるトゥートは以下の通り。
+・自インスタンスのユーザがおこなった公開トゥート
+・自インスタンスのユーザがブーストした公開トゥート（リモートユーザ含める）
+
+というところから、能動的に連合TLを活性させるには。
+・自インスタンスのユーザのトゥートを促進させる。
+・自インスタンスのアカウントで、よくブーストするユーザをフォローしておく。
+　2番目については自分でアカウントを建てれば簡単にできそう。
 
 
 -----------------------

@@ -1,33 +1,18 @@
-Lucida-Don概要
------------------------------------
-◆インスタンスの説明文
-
-一人鯖「Lucida-Don」です。<br />
-一般の方の新規登録を受け付ける予定はないです。<br />
-<hr />
-
-トゥートする内容はだいたいアカウント別に分かれてます。<br />
-本垢(管理)：<a target="_blank" href="https://mstdn.lucida-don.net/@lucida3rd">lucida3rd</a><br />
-
-日常垢：<a target="_blank" href="https://mstdn.lucida-don.net/@lucida3hai">lucida3hai</a><br />
-
-ゲーム垢：<a target="_blank" href="https://mstdn.lucida-don.net/@lucida3dei">lucida3dei</a><br />
-
-webサイト：<a target="_blank" href="https://web.lucida-don.net/">web</a><br />
-
-<hr />
-その他の外部アカウント<br />
-JP鯖(予備)：<a target="_blank" href="https://mstdn.maud.io/@lucida3yobi">lucida3yobi@mstdn.maud.io</a><br />
-
-twitter：<a target="_blank" href="https://twitter.com/lucida_twt">@lucida_twt</a><br />
-
-github：<a target="_blank" href="https://github.com/lucida3rd">lucida3rd</a><br />
-
-
+Lucida-Memo概要
 
 -----------------------------------
 ◆カスタム詳細説明
+-----------------------------------
+一人鯖「Lucida-Memo」です。<br />
+Lucida専用のインスタンスとなっています。<br />
+一般の方の新規登録を受け付ける予定はないです。<br />
 
+<hr />
+＜Index＞<br />
+わたしLucidaのmastodonアカウントやwebについてはindexページをご参照ください。<br />
+：<a target="_blank" href="https://lucida-memo.info/">index page</a><br />
+
+<hr />
 ＜Server Information＞<br />
 リージョン：さくらインターネット<br />
 サーバ：VPS（スペック不明）<br />
@@ -36,12 +21,11 @@ CPU：3Core（スペック不明）<br />
 メモリ：2GB（スペック不明）<br />
 SSD：50GB（スペック不明）<br />
 ネット帯域幅：100Mbps<br />
-<br />
 webサーバ：nginx<br />
 <hr />
 
 ＜Mastodon Information＞<br />
-バージョン：	v2.5.2	<br />
+バージョン：	v2.6.1	<br />
 
 docker：non-docker<br />
 データベース：postgreSQL<br />
@@ -49,10 +33,39 @@ docker：non-docker<br />
 
 <hr />
 ＜History＞<br />
+2018/11/3 →ドメイン変更「lucida-memo.info」<br />
+　　　　　　mastodon v2.6.1<br />
+2018/10/29 →mastodon v2.6.0rc3<br />
+2018/10/26 →mastodon v2.6.0rc2<br />
+2018/10/23 →mastodon v2.6.0rc1<br />
 2018/10/12 →mastodon v2.5.2<br />
 2018/10/8 →mastodon v2.5.1<br />
 2018/9/3 →mastodon v2.5.0<br />
 2018/8/25 →mastodon v2.4.5<br />
 2018/8/24 クラウド→VPSに移行（mastodon v2.4.4）<br />
 2018/8/15 新設（v2.4.3）<br />
+
+
+
+-----------------------------------
+◆インスタンスの説明(短)
+-----------------------------------
+一人鯖「Lucida-Memo」 index= https://lucida-memo.info/
+
+
+
+-----------------------------------
+◆インスタンスの説明
+-----------------------------------
+一人鯖「Lucida-Memo」です。<br />
+Lucida専用のインスタンスとなっています。<br />
+一般の方の新規登録を受け付ける予定はないです。<br />
+<br />
+
+Lucidaについては以下。<br />
+　：<a target="_blank" href="https://lucida-memo.info/">index page</a><br />
+サーバのスペックなど詳細については以下。<br />
+　：<a target="_blank" href="https://mstdn.lucida-memo.info/about/more">more page</a><br />
+
+
 

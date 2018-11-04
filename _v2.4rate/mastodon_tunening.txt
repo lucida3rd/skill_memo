@@ -9,7 +9,6 @@ mastodonの最適化、調整技のメモ。
 ◆PgBouncerのインストール：CentOS版
 ◆mastodonのサービスチューニング
 ◆ImageMagic 弱小鯖向けのビルド
-◆メールサーバ postfixのセキュリティ強化：smtps化
 
 
 
@@ -64,18 +63,33 @@ https://yum.postgresql.org/repopackages.php
 # systemctl restart pgbouncer
 # systemctl enable pgbouncer
 
-7.bgBouncerにパスワードを設定する。まずiniにアクセスする。
+7.パスワードをリセットする。
+# su - mastodon
+$ psql -p 5432 -U mastodon [mastodon_production] -w
+  []はDB名。もしアクセスできなかったら、mastodonのコンフィグで確認する。
+  /home/mastodon/live/.env.production
+
+> ALTER USER "mastodon" WITH PASSWORD 'password';
+ALTER ROLEが出ればOK。
+  passwoedの部分でパスワードを設定する。
+　間違ってもpasswordとしないこと。しぬで！
+
+\qで抜ける
+
+
+8.bgBouncerにパスワードを設定する。まずiniにアクセスする。
+exit
 # cd /etc/pgbouncer
 
-8.パスワードのハッシュ値を取得する。
+9.パスワードのハッシュ値を取得する。
 # echo -n "パスワード+mastodon" | md5sum
    +は省略する。mastodonはユーザ名。
 
-9.カレントにuserlist.txtを作成し、中にmastodonと9のハッシュ値を入れる。
-# vi userlist.txt
+10.カレントにuserlist.txtを作成し、中にmastodonと9のハッシュ値を入れる。
+# vim userlist.txt
 書式： "mastodon" "md5[10のハッシュ値]"
 
-10. 8.9と同じ要領でpgbouncerユーザを追加する。（パスワードも別で決め設定すること）
+11. 9.10と同じ要領でpgbouncerユーザを追加する。（パスワードも別で決め設定すること）
 
 12.pgbouncer.ini の設定をする。
 
@@ -94,7 +108,7 @@ default_pool_size = 20
 
 13.保存したらpostgresqlのログイン設定をmd5に変更する。
    ※ユーザ個別、DB個別でも設定できるっぽいけど、まあまあ。
-# vi /var/lib/pgsql/9.6/data/pg_hba.conf
+# vim /var/lib/pgsql/9.6/data/pg_hba.conf
 ------
 # TYPE  DATABASE        USER            ADDRESS                 METHOD
 ###local   all             all                                     peer
@@ -135,18 +149,6 @@ DB_PORT=6432        ※ここも変更する
 　5分くらい不安定になることもあるかも。
 
 
------------------------
-＜postgreSQLのチューニング＞
-
-pgTuneのパラメータ調整で最適値を設定できる。
-
-# cd /var/lib/pgsql/[バージョン]/data
-# vi postgresql.conf
-
-https://pgtune.leopard.in.ua/#/
-
-左欄に環境値を入力。[Genelate]クリックで右欄にチューニング項目が出る。
-
 
 -----------------------
 ＜mastodonのサービスチューニング＞
@@ -173,8 +175,21 @@ http://crakac.hatenablog.jp/entry/2017/12/10/121956
 # ls -la /usr/lib64/libjemalloc.so.1
 とにかくlibjemalloc*を探す。
 
+2.rubyをリコンパイルする。
+# su - mastodon
+$ cd live
+$ rbenv install --list
+rubyのバージョンの確認
+
+$ RUBY_CONFIGURE_OPTS=--with-jemalloc rbenv install 2.5.1
+2.5.1はrubyの最新バージョンに置き換える（無印のラストが最新安定版？）。
+
+$ rbenv global 2.5.1
+使用するrubyのバージョンを指定する。（念のため）
+
+
 2.mastodon webサービスの調整。
-# vi /etc/systemd/system/mastodon-web.service
+# vim /etc/systemd/system/mastodon-web.service
 ......
 Environment="PORT=3000"
 Environment="WEB_CONCURRENCY=[コア数]"  ※以下全て追加
@@ -190,16 +205,11 @@ Environment="LD_PRELOAD=[jmallocファイルまでの絶対パス]"★
 ......
 
 3.mastodon ストリームサービスの調整。
-# vi /etc/systemd/system/mastodon-streaming.service
-......
-ExecStart=/usr/bin/npm run start
-↓
-ExecStart=/usr/bin/node streaming/index.js
-......
-※node.jsのバージョンが古いとエラーがでるかも？
+# vim /etc/systemd/system/mastodon-streaming.service
+※エラーが出たので今回はいじりません。
 
 4.mastodon sidekiqサービスの調整。
-# vi /etc/systemd/system/mastodon-sidekiq.service
+# vim /etc/systemd/system/mastodon-sidekiq.service
 Environment="DB_POOL=5"
 ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 5 -q default -q mailers -q pull -q push
 ↓
@@ -227,7 +237,7 @@ ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 20 -q default,1 -q 
 # sysctl vm.swappiness
 vm.swappiness = [現在値]
 
-# vi /etc/sysctl.conf
+# vim /etc/sysctl.conf
 vm.swappiness = 10  ※追加
 
 再読み込みする
@@ -263,23 +273,20 @@ http://www.libpng.org/pub/png/libpng.html
 3.インストールする。
 # make install
 
-4.jpeg用にlibjpeg-develも必要
-# yum install libjpeg-devel
-
-5.ImageMagicのイメージを展開する。
+4.ImageMagicのイメージを展開する。
 ライブラリのフォルダからrootに移ってから作業する。
 # cd ..
 # wget https://www.imagemagick.org/download/ImageMagick.tar.gz
 # tar xvzf ImageMagick.tar.gz
 # cd [解凍されたフォルダ]
 
-6.おまじない？？？
+5.おまじない？？？
 実行するとコケるけど気にしない。
 pngのライブラリパスを通すことをやってるらしい。
 # export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 # ./configure LDFLAGS='-L/usr/local/lib -R/usr/local/lib'
 
-7.オプションを変更する
+6.オプションを変更する
 --with-quantum-depth  ※画像のbit数指定。デフォルトで16bitだけど、普通は8bitでも十分らしい。
 --disable-openmp      ※シングルコアの場合効果あり
 --without-threads     ※シングルコアの場合効果あり
@@ -291,18 +298,18 @@ pngのライブラリパスを通すことをやってるらしい。
 # make
 
 ★マルチコア向け
-# ./configure --disable-hdri --with-quantum-depth=8 --with-png --with-jpeg
+# ./configure --disable-hdri --with-quantum-depth=8 --with-png
 # make
 
 実行したあと最後に表示される有効オプション結果はコピペで控えておいたほうがいいかも。
 このとき--with-pngがyesになってることを確認する。
 noのままであれば5でがんばってパスを通すこと。（どうやるんぢゃ？）
 
-8.インストールする。
+7.インストールする。
 # make install
 # ldconfig /usr/local/lib  ※やらなくていい気もする
 
-9.動作確認
+8.動作確認
 # convert -version
   今日の日付で～Q8～であればOK。
   いちおmastodon権限でも試してみる。

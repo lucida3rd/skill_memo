@@ -7,19 +7,12 @@ Lucida（lucida3rd@mstdn.lucida-don.net）
 mastodonインスタンスを建てる方法メモ。
 さくらインターネットでCentOSを使った手順です。
 
-mastodon本体とその周辺のセットアップ
-　◆mastodonを建てるにあたって
-　◆mastodonを建てる：さくらのクラウド編
-　◆mastodonを建てる：さくらのVPS編
-
-サーバの追加設定
-　◆mastodon外部メディアストレージへの移設→wasabi
-　◆postgresのスーパバイザパスワードの再設定
-
-
-
-その他おまけ
-　◆エディタ：vimの導入（vimがインストールされなかった場合）
+◆mastodonを建てるにあたって
+◆mastodonを建てる：さくらのクラウド編
+◆mastodonを建てる：さくらのVPS編
+◆エディタ：vimの導入
+◆mastodon外部メディアストレージへの移設→wasabi
+◆postgresのスーパバイザパスワードの再設定
 
 
 
@@ -151,12 +144,30 @@ Your public key has been saved in /root/.ssh/id_rsa.pub.
 　ステータス上は「完了」と出るが、これはサーバの作成のこと。
 　mastodonの作成はかなり時間がかかるので、時間を置くこと。（2時間くらい見ておいたほうが無難）
 
-10.mastodonにアクセスする
+10.mastodonの設定をする
 　Webブラウザで「https://＜ドメイン＞/」にアクセスする。
 　mastodonのログインページがでたらOK。
 　でなかったらまだmastodon作成中なので、時間を置いて待つ。
 　※ここで慌てないこと！
 　2時間置いても出なかったら設定に問題あるかも？
+
+　1)まずは普通にmastodonのアカウントを作成する。
+　2)DOSやクライアントからサーバにログインする。
+　　dosの場合：ssh root@<ドメインアドレス>
+    公開鍵を指定する場合は-iオプションを付ける
+    ssh root@<ドメインアドレス> -i <ファイルの絶対パス>
+    ※常に鍵を指定しておいたほうが安全かも
+  3)rootパスワードを入力。
+　4)以下で、1)で作成したアカウントを管理者に昇格させる。
+su - mastodon
+cd live
+RAILS_ENV=production bundle exec rails mastodon:make_admin USERNAME=<1)のユーザID>
+
+以下のようなメッセージがでれば成功。
+Congrats! <ユーザID> is now an admin. \o/
+Navigate to https://<ドメインアドレス>/admin/settings to get started
+
+　4) 1)のユーザでmastodonに再ログインすると、管理者メニューが使えるようになる。
 
 
 -----------------------
@@ -231,94 +242,56 @@ Your public key has been saved in /root/.ssh/id_rsa.pub.
 
   ※終わったらしばらく待つ
 
-9.mastodonにアクセスする
+9.mastodonの設定をする
 　Webブラウザで「https://＜ドメイン＞/」にアクセスする。
 　mastodonのログインページがでたらOK。
 　でなかったらまだmastodon作成中なので、時間を置いて待つ。
 　※ここで慌てないこと！
 　2時間置いても出なかったら設定に問題あるかも？
 
+　1)まずは普通にmastodonのアカウントを作成する。
+　2)DOSやクライアントからサーバにログインする。
+　　dosの場合：ssh root@<ドメインアドレス>
+    公開鍵を指定する場合は-iオプションを付ける
+    ssh root@<ドメインアドレス> -i <ファイルの絶対パス>
+    ※常に鍵を指定しておいたほうが安全かも
+  3)rootパスワードを入力。
+　4)以下で、1)で作成したアカウントを管理者に昇格させる。
+su - mastodon
+cd live
+RAILS_ENV=production bundle exec rails mastodon:make_admin USERNAME=<1)のユーザID>
+
+以下のようなメッセージがでれば成功。
+Congrats! <ユーザID> is now an admin. \o/
+Navigate to https://<ドメインアドレス>/admin/settings to get started
+
+　4) 1)のユーザでmastodonに再ログインすると、管理者メニューが使えるようになる。
+
+
 
 -----------------------
-＜mastodonを建てる：共通後処理＞
+＜エディタ：vimの導入＞
+現在入っている Vim エディタを確認します。
+$ yum list installed | grep vim
 
-◆管理者アカウントを登録する
-1.Webブラウザで「https://＜ドメイン＞/」にアクセスしてユーザを登録する。
+vimをインストールするのに必要なパッケージをインストールします。
+$ yum install mercurial
+$ yum install ncurses-devel
+$ yum install make
+$ yum install gcc
 
-2.クライアントから鯖にログインする。
-dosのプロンプトからの例。
-> ssh root@[ホストIPアドレス] -i [秘密鍵(拡張子がない)のパス]
-  例：ssh root@xxx.xxx.xxx.xxx -i C:\Users\User1\.ssh\id_kagi
+ソースビルドでのインストールを行います。
+$ su
+パスワード：（ root のパスワードを入力）
+$ cd /usr/local/src
+$ hg clone https://bitbucket.org/vim-mirror/vim vim
 
-3. 1のユーザを管理者に昇格させる
-# su - mastodon
-$ cd live
-$ RAILS_ENV=production bin/tootctl accounts modify <1のユーザID> --role admin
+vimのインストール
+$ cd vim
+$ sudo ./configure --with-features=huge --enable-multibyte --disable-selinux
+$ sudo make
+$ sudo make install
 
-OKがでれば成功。
-
-
-◆mastodonユーザのパスワードリセット
-
-1.CentOSのパスワードを設定する。
-# passwd mastodon
-パスワードを設定する。
-
-2.postgreSQLのパスワードを設定する。
-# su - mastodon
-$ psql
-
-mastodon=> alter role mastodon with password '[パスワード]';
-ALTER ROLEと出ればOK。
-
-mastodon=> \q
-
-
-◆postgresユーザのパスワードリセット
-
-1.CentOSのパスワードを設定する。
-# passwd postgres
-パスワードを設定する。
-
-※postgreSQLのpostgresはスーパーバイザなので少し手順が異なる。
-
-3.postgresのconfigで認証方式をtrustに書き換える。
-# cd /var/lib/pgsql/[バージョン]/data
-# vi pg_hba.conf
-
-以下★印の2か所
-------
-# TYPE  DATABASE        USER            ADDRESS                 METHOD
-###local   all             all                                     peer
-local   all             all                                     trust	★
-# IPv4 local connections:
-###host    all             all             127.0.0.1/32            ident
-host    all             all             127.0.0.1/32            trust	★
-------
-
-4.サーバをリブートする。
-
-5.postgresにログインする。
-# psql -U postgres
-
-6.パスワードを書き換える。
-postgres=> alter role postgres with password '[新しいパスワード]';
-ここで ALTER ROLE が出ればOK。
-postgres=> \q
-
-7. 2で書き換えたpostgresの認証方式を元に戻す。
-
-8.サーバをリブートする。
-
-9.接続テスト。
-# psql -h localhost -U postgres -d mastodon
-ここで6で入力したパスワードでログインする。（※認証方式がtrustの場合はパスワードはいらない）
-
-mastodon=>
-
-のプロンプトがでればOK。
-
-mastodon=> \q
 
 
 -----------------------
@@ -454,7 +427,7 @@ https://wasabi.com/pricing/
 10.古いキャッシュを掃除しておく。
 　# su - mastodon
 　$ cd live
-  $ RAILS_ENV=production bin/tootctl media remove
+　$ RAILS_ENV=production bundle exec rake mastodon:media:remove_remote
 　$ exit
 
 11.mastodonとバケツを同期する。かなり時間がかかります。
@@ -565,29 +538,78 @@ HTTP/2 200
 
 
 -----------------------
-＜エディタ：vimの導入＞
-さくらのスクリプトを使用した場合は既に導入済みである。
-  コマンド：vi
+＜mastodonを建てる：共通編：パスワードのリセット＞
 
-現在入っている Vim エディタを確認します。
-$ yum list installed | grep vim
+さくらのスクリプトだとmastodonで使うCentOSユーザ、postgresユーザのパスワードが
+無設定になっている。セキュリティ上は問題ないが、例えばrootユーザからmastodonデータベースにアクセスできなかったり、
+サーバの調整を行う際に障害となりうるので、任意のパスワードを設定しておいたほうがよい。
 
-vimをインストールするのに必要なパッケージをインストールします。
-$ yum install mercurial
-$ yum install ncurses-devel
-$ yum install make
-$ yum install gcc
+1.CentOSのパスワードを設定する。
+# passwd mastodon
+パスワードを設定する。
 
-ソースビルドでのインストールを行います。
-$ su
-パスワード：（ root のパスワードを入力）
-$ cd /usr/local/src
-$ hg clone https://bitbucket.org/vim-mirror/vim vim
+2.postgresのパスワードを設定する。
+# su - mastodon
+$ psql
 
-vimのインストール
-$ cd vim
-$ sudo ./configure --with-features=huge --enable-multibyte --disable-selinux
-$ sudo make
-$ sudo make install
+mastodon=> alter role postgres with password '[パスワード]';
+ALTER ROLEと出ればOK。
+
+mastodon=> \q
+
+
+なお、CentOSで追加したユーザでpostgresを使う場合、postgresのスーパバイザパスワードの再設定も必要。
+こちらは後述を参照のこと。
+
+
+-----------------------
+＜postgresのスーパバイザパスワードの再設定＞
+
+さくらのスクリプトを使ったセットアップだとpostgresのスーパバイザパスワードが設定されない。
+postgresの仕様でパスワードなしユーザでのログインは拒否となるのでセキュリティの問題はないが、
+新規ユーザを作成する際などのスーパバイザ操作ができなくなる。
+
+そこで以下の手順でパスワードをリセットしておくことをお勧めする。
+
+1.postgresのconfigで認証方式をtrustに書き換える。
+# cd cd /var/lib/pgsql/[バージョン]/data
+# vim pg_hba.conf
+
+以下★印の2か所
+------
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+###local   all             all                                     peer
+local   all             all                                     trust	★
+# IPv4 local connections:
+###host    all             all             127.0.0.1/32            ident
+host    all             all             127.0.0.1/32            trust	★
+------
+
+2.サーバをリブートする。
+
+3.postgresにログインする。
+# psql -U postgres
+
+4.パスワードを書き換える。
+
+postgres=> [新しいパスワード]
+postgres=> alter role postgres with password '[新しいパスワード]';
+ここで ALTER ROLE が出ればOK。
+postgres=> \q
+
+5. 1で書き換えたpostgresの認証方式を元に戻す。
+
+6.サーバをリブートする。
+
+7.接続テスト。
+# psql -h localhost -U postgres -d mastodon
+ここで4で入力したパスワードでログインする。
+
+mastodon=>
+
+のプロンプトがでればOK。
+
+mastodon=> \q
+
 
 
