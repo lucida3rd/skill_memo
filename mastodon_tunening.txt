@@ -1,16 +1,14 @@
 -----------------------
 mastodon チューニングメモ
 
-Lucida（lucida3rd@mstdn.lucida-don.net）
+Lucida（lucida3rd@mstdn.lucida-memo.info）
 -----------------------
 ＜概要＞
 mastodonの最適化、調整技のメモ。
 
 ◆PgBouncerのインストール：CentOS版
 ◆mastodonのサービスチューニング
-◆ImageMagic 弱小鯖向けのビルド
-◆メールサーバ postfixのセキュリティ強化：smtps化
-
+◆ImageMagicチューニング
 
 
 ---------------------------------
@@ -138,6 +136,9 @@ DB_PORT=6432        ※ここも変更する
 -----------------------
 ＜postgreSQLのチューニング＞
 
+参考：
+https://qiita.com/cuzic/items/f9b846e6171a54079d77
+
 pgTuneのパラメータ調整で最適値を設定できる。
 
 # cd /var/lib/pgsql/[バージョン]/data
@@ -147,30 +148,97 @@ https://pgtune.leopard.in.ua/#/
 
 左欄に環境値を入力。[Genelate]クリックで右欄にチューニング項目が出る。
 
+いじったら反映する
+# systemctl restart postgresql*
+# systemctl restart pgbouncer
+
+
+各項目の詳細：
+
+max_connections
+RDBMSへの同時接続数。
+WEBなどのユーザが同時にアクセスすることが想定される環境であれば大きく設定する。
+バッチ処理など同時アクセス数が少ない環境では小さくする。
+大きく設定しすぎるとメモリ消費量が増えてしまう。
+　設定値：よくわかんないけど、お一人様でも蔵とか使うし、20くらい？
+
+shared_buffers
+データベースが使用する共有メモリバッファの値を指定する。
+値が大きすぎるとOSがバッファとして使える容量が減り、逆に性能が低下する。
+　設定値：総メモリの 25% 程度
+
+effective_cache_size
+カーネルや PostgeSQL の共有バッファなど PostgreSQL が使用するバッファ領域、
+ディスクキャッシュとして利用可能な大きさの推定値。
+この値を大きくするとオプティマイザがインデックスを利用した問合せプランを
+選択しやすくなる。
+　設定値：総メモリの 50% 程度
+
+work_mem
+ソートやテーブルのジョインなどのときに使われるメモリ量。
+この値を大きくすると、テーブル結合処理などが高速化される。
+　設定値：総メモリの 0.5% 程度？
+
+maintenance_work_mem
+vacuum 処理で使われるメモリ量。
+　設定値：256MB or 512MB 程度。
+
+checkpoint_completion_target
+チェックポイントの書き出し処理を分散し、ゆっくり書き出すようにするときに使う。
+　設定値：0.9
+
+random_page_cost
+デフォルト値は 4.0。
+高IOPSなRAID構成の磁気ディスクを使う場合は2.0～3.0。
+SSD の場合は 1.1 に設定することで高速化できる。
+
+effective_io_concurrency
+通常は１度に１ブロックずつ取り出す処理を行うが、efffective_io_concurrencyを設定すると、
+データを先読みして複数ブロックを同時に取得することができる。
+efffective_io_concurrencyの値はディスクドライブの数を指定すると良い。
+たとえば RAID10（ミラーリング＋ストライピング）で構成している場合は 4 と指定する。
+
+synchronous_commit
+offとすると同期コミットが無効化され、高速化できる。
+ただし、クラッシュ時の復元可能性は担保されるものの、データ損失のリスクがある。
+
+
+いじらなくていい：
+
+fsync
+synchronous_commit=off とすれば高速化効果としては十分で、fsync=off とする必要はない。
+
+wal_buffers
+PostgreSQL 9.1 以降では自動調整されるため、デフォルト値のままで問題ない。
+
 
 -----------------------
 ＜mastodonのサービスチューニング＞
 
 上記bgBouncerを導入するのが前提になると思う。
-サービスの設定を最小稼働用に見直すみたい。
-
-また併せてjmallocの導入も行う（関連設定は★印箇所）
-https://qiita.com/kumasun/items/bf4997f181f893130041
-emalloc は、標準ライブラリで定義されているmalloc, free 等のメモリアロケーションAPI。
-主にガベージコレクションを早く消化し、メモリリークを防止する働きがあるらしい。
-
-補足：
-・シングルコアの場合は更にrabyのファイルで処理を変更する方法もあるけど
-  うちはマルチコアなのでやらなかった。
-・なんかエラーが出た手順は省略した。
+また併せてjmallocの導入も行う。
 
 参考：
-http://crakac.hatenablog.jp/entry/2017/12/10/121956
+https://qiita.com/kumasun/items/bf4997f181f893130041
 
 
-1.jemallocをインストールする。
-# yum install jemalloc
-# ls -la /usr/lib64/libjemalloc.so.1
+1.jemallocをインストールする。（最新を自分でmakeする方法）
+
+release
+https://github.com/jemalloc/jemalloc/releases
+
+インストール
+https://github.com/jemalloc/jemalloc/blob/dev/INSTALL.md
+
+# wget [ソースコードのURL]
+# tar xvzf [アーカイブファイル名]
+# cd [解凍されたフォルダ]
+# bash autogen,sh
+# make dist
+# make
+
+# make install
+# ls -la /usr/local/lib/libjemalloc*
 とにかくlibjemalloc*を探す。
 
 2.mastodon webサービスの調整。
@@ -179,15 +247,10 @@ http://crakac.hatenablog.jp/entry/2017/12/10/121956
 Environment="PORT=3000"
 Environment="WEB_CONCURRENCY=[コア数]"  ※以下全て追加
 Environment="MAX_THREADS=5"
-Environment="RUBY_GC_HEAP_INIT_SLOTS=500000"
-Environment="RUBY_GC_HEAP_GROWTH_FACTOR=1.2"
-Environment="RUBY_GC_HEAP_GROWTH_MAX_SLOTS=1000000"
-Environment="RUBY_GC_HEAP_FREE_SLOTS_MIN_RATIO=0.1"
-Environment="RUBY_GC_HEAP_FREE_SLOTS_MAX_RATIO=0.3"
-Environment="RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR=1.2"
-Environment="RUBY_GC_OLDMALLOC_LIMIT_MAX=67108864"
 Environment="LD_PRELOAD=[jmallocファイルまでの絶対パス]"★
 ......
+
+コア数分bundleプロセスができる。処理できるようなら調整できると思う。
 
 3.mastodon ストリームサービスの調整。
 # vi /etc/systemd/system/mastodon-streaming.service
@@ -203,16 +266,9 @@ ExecStart=/usr/bin/node streaming/index.js
 Environment="DB_POOL=5"
 ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 5 -q default -q mailers -q pull -q push
 ↓
-Environment="DB_POOL=20"
-Environment="RUBY_GC_HEAP_INIT_SLOTS=500000"
-Environment="RUBY_GC_HEAP_GROWTH_FACTOR=1.2"
-Environment="RUBY_GC_HEAP_GROWTH_MAX_SLOTS=1000000"
-Environment="RUBY_GC_HEAP_FREE_SLOTS_MIN_RATIO=0.1"
-Environment="RUBY_GC_HEAP_FREE_SLOTS_MAX_RATIO=0.3"
-Environment="RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR=1.2"
-Environment="RUBY_GC_OLDMALLOC_LIMIT_MAX=67108864"
+Environment="DB_POOL=30"
 Environment="LD_PRELOAD=[jmallocファイルまでの絶対パス]"★
-ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 20 -q default,1 -q push,1 -q pull,1 -q mailers,1
+ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 30 -q default -q push -q pull -q mailers
 
 5.mastodonサービスを再起動する。
 # systemctl daemon-reload
@@ -238,7 +294,7 @@ vm.swappiness = 10  ※追加
 
 
 -----------------------
-＜ImageMagic 弱小鯖向けのビルド＞
+＜ImageMagicチューニング＞
 
 ImageMagicの個人makeインストール方法（CentOS版）。
 あとmastodonの場合、png形式を扱う機会が多いので（iPhoneユーザ向け）
@@ -287,7 +343,7 @@ pngのライブラリパスを通すことをやってるらしい。
 --with-png            ※pngの有効化。付けなくてもいい気もする。
 
 ★シングルコア向け
-# ./configure --disable-hdri --with-quantum-depth=8 --with-png --disable-openmp --without-threads
+# ./configure --disable-hdri --with-quantum-depth=8 --with-png --with-jpeg --disable-openmp --without-threads
 # make
 
 ★マルチコア向け
@@ -311,5 +367,40 @@ noのままであれば5でがんばってパスを通すこと。（どうや�
 その他：
 何らかの不手際でリメイクするときはmakeファイルをクリアすること。
 # make clean
+
+
+
+-----------------------
+＜nginxチューニング＞
+2個の記事を参考に。
+https://inside.pixiv.blog/harukasan/1284
+https://qiita.com/toshihirock/items/f3aac142882c9c320b7f
+
+worker_rlimit_nofile、worker_connectionsをチューニングする。
+
+worker_rlimit_nofile
+ディスクリプリンタの値の設定ができる。ディスクリプリンタとは...わからんです。
+OSのディスクリプリンタ値は以下で調べられる。
+# $ ulimit -n
+
+worker_connections
+nginxではworker_rlimit_nofileの値以上を設定することができない。
+
+ので、worker_rlimit_nofile <= worker_connections となる。
+
+設定ファイルは以下
+# vi /etc/nginx/nginx.conf
+
+以下のように変更。（※qiitaの例）
+worker_rlimit_nofile 2048;
+
+events {
+###	worker_connections 1024;
+	worker_connections 2048;
+}
+
+変更したらnginxを再起動する。
+# nginx -s reload
+
 
 

@@ -1,7 +1,7 @@
 -----------------------
 CentOS 運用メモ
 
-Lucida（lucida3rd@mstdn.lucida-don.net）
+Lucida（lucida3rd@mstdn.lucida-memo.info）
 -----------------------
 ＜概要＞
 CentOS（ver.7）運用時によく使うコマンドや技をまとめます。

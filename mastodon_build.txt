@@ -1,7 +1,7 @@
 -----------------------
 mastodon インスタンス建立メモ
 
-Lucida（lucida3rd@mstdn.lucida-don.net）
+Lucida（lucida3rd@mstdn.lucida-memo.info）
 -----------------------
 ＜概要＞
 mastodonインスタンスを建てる方法メモ。

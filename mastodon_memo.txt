@@ -1,7 +1,7 @@
 -----------------------
 mastodon 運用メモ
 
-Lucida（lucida3rd@mstdn.lucida-don.net）
+Lucida（lucida3rd@mstdn.lucida-memo.info）
 -----------------------
 ＜概要＞
 mastodon運用時によく使うコマンドや技をまとめます。
@@ -151,6 +151,11 @@ cron設定ファイル
 環境変数の削除
 # unset XXX
   export XXX=""（空欄）では消えない
+
+
+
+
+
 
 
 ◆sendmailのテスト
@@ -394,6 +399,13 @@ WinScapに秘密鍵ファイルを認識させる
 
 ファイアーウォール設定をリロードする
 # firewall-cmd --reload
+
+ログの制御
+# firewall-cmd --set-log-denied=[設定値]
+設定値
+all=全出力(拒否含む)
+off=出力しない
+ログは /var/log/message に出力される。
 
 
 -----------------------
