@@ -222,14 +222,20 @@ mastodon-sidekiq.service
 
 https://qiita.com/Yorinton/items/00ad34f3f902ed41c12f
 
+リリース
+https://nodejs.org/ja/
+
 nコマンドを使ったアップデート。
 この方法だとnvmなどで切り替えできなくてグローバル的にアップデートされる。
 mastodonではこの方法でならアップデートが楽になりそう。
 
-1. nをインストールする
+1.バージョン確認
+# node -v
+
+2. nをインストールする
 # npm install -g n
 
-2. Node.jsをアップデートする
+3. Node.jsをアップデートする
 # n stable     安定版
 # n latest     最新版
 

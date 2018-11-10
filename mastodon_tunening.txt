@@ -275,23 +275,6 @@ ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 30 -q default -q pu
 # systemctl restart mastodon*
    ※デーモンを先に再起動しないと怒られる
 
-6.スワップパラメータの調整。
-値は0から100まででデフォルトは60。大きいほどよくスワップする。
-0にするとRAMを使いきるまでスワップしない。
-100だとパフォーマンスに悪影響を及ぼすレベルでガンガンスワップする。
-
-# sysctl vm.swappiness
-vm.swappiness = [現在値]
-
-# vi /etc/sysctl.conf
-vm.swappiness = 10  ※追加
-
-再読み込みする
-# sysctl -p
-
-※ImageMagicあたりはよくわかんなかった。
-
-
 
 -----------------------
 ＜ImageMagicチューニング＞
@@ -402,5 +385,84 @@ events {
 変更したらnginxを再起動する。
 # nginx -s reload
 
+
+-----------------------
+＜OSチューニング＞
+
+参考
+http://www.denet.ad.jp/technology/2017/11/redis-centos7.html
+
+1.THPをdisableにする
+今の設定値
+# cat /sys/kernel/mm/transparent_hugepage/enabled
+[always] madvise never  ///有効になっている。
+
+無効化のコマンド
+# echo never > /sys/kernel/mm/transparent_hugepage/enabled
+
+設定後の確認
+# cat /sys/kernel/mm/transparent_hugepage/enabled
+always madvise [never]  ///無効になった
+
+このままだとサーバリブートで元に戻ってしまうので。
+# vi /etc/rc.local
+最終行に以下を追記
+echo never > /sys/kernel/mm/transparent_hugepage/enabled
+
+実行権限を付与
+# chmod +x /etc/rc.d/rc.local
+
+radisサービスの設定を変える
+# vi /usr/lib/systemd/system/redis.service
+
+[Unit]
+Description=Redis persistent key-value database
+After=network.target rc-local.service  //「rc-local.service」を追記
+
+サーバをリブートして設定が反映されるか確認する
+# reboot
+...
+# cat /sys/kernel/mm/transparent_hugepage/enabled
+always madvise [never]
+
+# systemctl status redis.service
+
+
+2.OSパラメータの調整。
+tcp-backlogの値をメモしておく（変更はしない）
+# vi /etc/redis.conf
+
+設定変更
+# vi /etc/sysctl.conf
+vm.overcommit_memory=1  ※追加
+  OOM Killerのふるまい。
+  0：空き容量がなければ実行中のプロセスを強制終了する（デフォルト）
+  1：制限ギリギリまでメモリがあるように振る舞い、確保できなければ実行中のプロセスを強制終了する
+  2：空き容量がない場合はエラーを発生させる
+  ※radisでは1が推奨されている
+
+net.core.somaxconn = 511
+  OSレベルの接続キューの最大値。
+  具体的には「アプリで設定した指定した接続キューの最大数 > net.core.somaxconn設定値」の場合、
+  アプリ側での設定値が大きくても、net.core.somaxconn設定値がボトルネックになって接続不可になる。
+  ※/etc/redis.confのtcp-backlogの値を設定する（さくらスクリプトの場合は511）
+
+vm.swappiness = 10  ※追加
+  スワップパラメータ。
+  値は0から100まででデフォルトは60。大きいほどよくスワップする。
+  0にするとRAMを使いきるまでスワップしない。
+  100だとパフォーマンスに悪影響を及ぼすレベルでガンガンスワップする。
+
+
+サーバをリブートして設定が反映されるか確認する
+# reboot
+...
+# cat /proc/sys/vm/overcommit_memory
+# cat /proc/sys/net/core/somaxconn
+# cat /proc/sys/vm/swappiness
+
+
+メモ：
+# sysctl -p
 
 
