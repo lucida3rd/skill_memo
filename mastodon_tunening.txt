@@ -276,6 +276,110 @@ ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 30 -q default -q pu
    ※デーモンを先に再起動しないと怒られる
 
 
+◆更なるチューニング：sidekiqを複数プロセスで実行する。
+
+参考：
+https://inside.pixiv.blog/harukasan/1284
+https://qiita.com/Ress/items/14cf460ca929a4213236
+
+Mastodonには標準で4つのキューがあるが、さくらスクリプトでデフォルトだと1つのsidekiqプロセスで動かしている。
+このため優先されるキューの処理が先行されると、後のキューの処理が遅延し、全体的なsidekiqの処理が遅延してしまう。
+（場合によってはmastodonのサービスが落ちるような動きになる。目視観測だが...）
+
+キューの種類は以下の通り。
+　default：トゥートの反映など全般
+　mail   ：メールを送信する
+　push   ：ほかのMastodonインスタンスに更新を送信する
+　pull   ：ほかのMastodonインスタンスから更新を取得する
+
+このうちpush、pullのキューは他のMastodonインスタンスのAPIをリクエストするため、
+ほかのMastodonインスタンスが応答できない状態に陥ったり、自インスタンスのpushが多くなると
+defaultキューの処理も遅延させてしまう。
+
+これを防ぐため、キューごとにSidekiqプロセスを冗長化する。
+
+sidekiqは起動オプションでどのキューを処理するか指定することができるので、
+これを利用して1台のサーバインスタンスに複数のSidekiqプロセスを立てることにする。
+
+例に従い、以下のプロセスとDBプール配分にする。（masdn.lucida-memo.infoの例）
+  プロセス1：default,mailers  DB Pool=20   ※これは既存のmastodon-sidekiq.serviceを使おうと思う
+  プロセス2：push             DP Pool=20   ※mastodon-sidekiq-push
+  プロセス3：pull             DB Pool=20   ※mastodon-sidekiq-pull
+
+1.サービスファイルを作成する
+
+vi /etc/systemd/system/mastodon-sidekiq.service
+[Unit]
+Description=mastodon-sidekiq
+After=network.target
+
+[Service]
+Type=simple
+User=mastodon
+WorkingDirectory=/home/mastodon/live
+Environment="RAILS_ENV=production"
+Environment="DB_POOL=20"
+Environment="LD_PRELOAD=[jmallocファイルまでの絶対パス]"★
+ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 20 -q default,2 -q mailers,1
+TimeoutSec=15
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+----------------
+vi /etc/systemd/system/mastodon-sidekiq-push.service
+[Unit]
+Description=mastodon-sidekiq-push
+After=network.target
+
+[Service]
+Type=simple
+User=mastodon
+WorkingDirectory=/home/mastodon/live
+Environment="RAILS_ENV=production"
+Environment="DB_POOL=10"
+Environment="LD_PRELOAD=[jmallocファイルまでの絶対パス]"★
+ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 10 -q push
+TimeoutSec=15
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+----------------
+vi /etc/systemd/system/mastodon-sidekiq-pull.service
+[Unit]
+Description=mastodon-sidekiq-pull
+After=network.target
+
+[Service]
+Type=simple
+User=mastodon
+WorkingDirectory=/home/mastodon/live
+Environment="RAILS_ENV=production"
+Environment="DB_POOL=10"
+Environment="LD_PRELOAD=[jmallocファイルまでの絶対パス]"★
+ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 10 -q pull
+TimeoutSec=15
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+----------------
+
+
+2.サービスとして起動、登録する
+# systemctl daemon-reload
+# systemctl restart mastodon-sidekiq.service
+
+# systemctl start mastodon-sidekiq-push.service
+# systemctl enable mastodon-sidekiq-push.service
+
+# systemctl start mastodon-sidekiq-pull.service
+# systemctl enable mastodon-sidekiq-pull.service
+
+# systemctl status mastodon*
+
+
 -----------------------
 ＜ImageMagicチューニング＞
 
@@ -318,7 +422,11 @@ pngのライブラリパスを通すことをやってるらしい。
 # export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 # ./configure LDFLAGS='-L/usr/local/lib -R/usr/local/lib'
 
-7.オプションを変更する
+7.gifのキャッシュを変更する
+# vi [ImageMagick]/MagickCore/quantize.c
+CacheShift = 3     //固定する
+
+8.オプションを変更する
 --with-quantum-depth  ※画像のbit数指定。デフォルトで16bitだけど、普通は8bitでも十分らしい。
 --disable-openmp      ※シングルコアの場合効果あり
 --without-threads     ※シングルコアの場合効果あり
@@ -337,11 +445,11 @@ pngのライブラリパスを通すことをやってるらしい。
 このとき--with-pngがyesになってることを確認する。
 noのままであれば5でがんばってパスを通すこと。（どうやるんぢゃ？）
 
-8.インストールする。
+9.インストールする。
 # make install
 # ldconfig /usr/local/lib  ※やらなくていい気もする
 
-9.動作確認
+10.動作確認
 # convert -version
   今日の日付で～Q8～であればOK。
   いちおmastodon権限でも試してみる。

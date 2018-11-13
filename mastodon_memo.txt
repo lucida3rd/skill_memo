@@ -152,10 +152,10 @@ cron設定ファイル
 # unset XXX
   export XXX=""（空欄）では消えない
 
-
-
-
-
+staptopの確認
+# slabtop
+deneyの削除
+# echo 2 > /proc/sys/vm/drop_caches
 
 
 ◆sendmailのテスト
