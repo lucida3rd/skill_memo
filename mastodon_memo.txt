@@ -22,6 +22,7 @@ mastodon運用時によく使うコマンドや技をまとめます。
 　◆ファイアーウォールの操作
 　◆nginxがnginx: [error] open()で起動できない場合の対処
 　◆削除されたリモートアカウントを自分のdbから削除する
+　◆cronの設定
 
 インスタンスの再建・閉鎖
 　◆mastodonインスタンス爆破→再建
@@ -92,6 +93,9 @@ $ RAILS_ENV=production bin/tootctl accounts modify <ユーザID> --role admin
 $ RAILS_ENV=production bin/tootctl accounts modify <ユーザID> --role moderator
 権限の剥奪（一般ユーザ化）
 $ RAILS_ENV=production bin/tootctl accounts modify <ユーザID> --role user
+
+外部インスタンスをパージする
+$ RAILS_ENV=production bundle exec bin/tootctl domains purge <ドメイン名>
 
 
 ◆ディレクトリ
@@ -492,11 +496,40 @@ cd certbot
 /etc/letsencrypt/live/
 
 
+-----------------------
+＜cronの設定＞
+
+タイムスケジューラの設定方法。
+参考：
+https://www.server-memo.net/tips/etc-crontab.html
 
 
+cronファイル：
+/etc/cron.d/0hourly
+  パーミッションは644
+  所有者はroot
+
+書式：
+分　時　日　月　曜日　実行ユーザ　実行コマンド
+
+例：
+毎時15分にキャッシュをクリアする
+15 * * * * root echo 2 > /proc/sys/vm/drop_caches
 
 
-
+＜cronが動かない場合＞
+・ログを確認
+  /var/log/cron
+・メールの確認
+  /var/spool/mail
+・crondが動作しているか確認
+  service crond status
+・ファイルのパーミッション・所有者の確認
+  rootユーザ以外に実行権限や書き込み権限があったりすると実行されない
+・改行コードの確認
+  0hourlyに改行コード「CR+LF」が含まれると動作しないことがある。
+  「CR+LF」→「LF」のみに置き換えるか、Linux上でviなどで改行コードをつけなおす。
+  ※特にwindowsで作ったファイルを転送した場合、注意が必要
 
 
 -----------------------
