@@ -16,11 +16,10 @@ mastodon本体とその周辺のセットアップ
 　◆mastodon外部メディアストレージへの移設→wasabi
 　◆postgresのスーパバイザパスワードの再設定
 
-
-
 その他おまけ
 　◆エディタ：vimの導入（vimがインストールされなかった場合）
-
+  ◆phpの導入
+  ◆Zabbixの導入
 
 
 ---------------------------------
@@ -589,5 +588,269 @@ $ cd vim
 $ sudo ./configure --with-features=huge --enable-multibyte --disable-selinux
 $ sudo make
 $ sudo make install
+
+
+
+---------------------------------
+＜phpの導入＞
+php+nginxをセットで使う。（前提：nginxはインストール済）
+
+参考：
+https://qiita.com/noraworld/items/fd491a77af9d4e1ccffa
+
+1.phpをインストールする
+# yum -y install php
+# php --version
+
+2.PHP-FPMをインストールする
+# yum -y install php-fpm
+
+3.PHP-FPMの設定変更をする
+# vi /etc/php-fpm.d/www.conf
+user = nginx
+group = nginx
+
+4.サービスを再起動する
+# systemctl restart php-fpm
+# systemctl status php-fpm
+
+5.nginxの設定を変更する
+  webサイトでphpを利用できるような設定と仮定する
+
+location / {
+    root   /[ホームディレクトリ];
+    index  index.html index.htm index.php;
+}
+
+location ~ \.php$ {
+    root   /[ホームディレクトリ];
+    fastcgi_pass   127.0.0.1:9000;
+    fastcgi_index  index.php;
+    fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+    include        fastcgi_params;
+}
+
+6.サービスを再起動する
+
+
+# nginx -s reload
+
+# systemctl restart nginx
+
+7.webページのディレクトリにテストphpファイルを作成する
+<?php
+   phpinfo();
+?>
+
+phpのページが表示されればOK。
+
+
+---------------------------------
+＜Zabbixの導入＞
+ログの監視や障害通知をおこなうツール。
+（前提：nginx、php、postgresqlはインストール済。
+  postgresユーザのパスワードは設定済）
+
+補足：
+  今回"も"qiitaの記事を参考にさせていただきましたが、
+  うちの環境だとエラーがでたり、環境に合わない設定がありましたので
+  一部手順を変えてます。（いつも変えてるけどちょっと変更点多いです）
+
+参考：
+https://qiita.com/atanaka7/items/920dd3edcaefe2b7e1fa
+https://qiita.com/ksworks/items/911561ef22687a13a70c
+https://qiita.com/mogetarou/items/9af19155c19f3e33c3c1
+
+
+1.まずOSをアップデートする
+# yum update
+# reboot
+
+2.firewallで使用ポートの穴をあける
+# firewall-cmd --list-all
+
+# firewall-cmd --add-port=10050/tcp --zone=public --permanent  ※agent用
+# firewall-cmd --add-port=10051/tcp --zone=public --permanent  ※server用
+# firewall-cmd --add-service=http --zone=public --permanent    ※server用
+
+リロードする
+# firewall-cmd --reload
+# firewall-cmd --list-all
+
+3.SELinuxが有効の場合、以下3つをONにする
+# setsebool -P httpd_can_network_connect_db on
+# setsebool -P httpd_can_connect_zabbix on
+# setsebool -P zabbix_can_network on
+
+4.Zabbixのリポジトリを登録してインストールする
+本家：https://www.zabbix.com/jp/  製品ページから
+
+# yum install [リポジトリパス]
+# yum install zabbix-server-pgsql zabbix-web-pgsql zabbix-agent
+
+5.postgresにログインする
+# su - postgres
+
+6.zabbix用のユーザを作成する
+$ createuser zabbix -P -S -R -D
+  zabbix用のパスワード、確認用、postgresのパスワードの順に聞いてくる。
+
+7.DBを作成する
+$ createdb -O zabbix -E UTF8 zabbix
+  postgresのパスワードを聞いてくる。
+
+※一応このテキストのbuildではmd5認証になってるのでそのままで。
+
+8.rootに戻ってDBの初期化をおこなう
+$ exit
+# zcat /usr/share/doc/zabbix-server-pgsql-3.0.24/create.sql.gz | psql -U zabbix zabbix -W
+  zabbixのパスワードを聞いてくる。
+
+9.Zabbixの設定ファイルの設定変更
+# vi /etc/zabbix/zabbix_server.conf
+
+DBHost=localhost
+DBPassword=[zabbixのパスワード]
+DBPort=5432
+
+9.デーモンの起動
+# systemctl start zabbix-server
+# systemctl start zabbix-agent
+# systemctl enable zabbix-server
+# systemctl enable zabbix-agent
+
+  ※うちはapacheは使うつもりないので httpdサービス はstartさせない
+
+
+10.zabbix-webの設定
+/var/www をzabbixフォルダとしてアクセスできるように設定する
+
+# cd /etc/zabbix
+# ls -ld web
+# chown nginx.nginx web
+# cd /var/www
+# sudo ln -s /usr/share/zabbix .
+
+11.nginxの設定変更
+10項で設定した仮想zabbixフォルダに対してnginxからアクセスできるようにする。
+ならびにphpが使えるようにする。のとphpでzabbixを実行するのに大きめのバッファ
+を設定する。
+  補足：
+    SSL設定も有効。なので既設定から流用するやり方のがラクかも。
+    なおLet's Encryptを使ってる場合は証明書にサブドメインを追加すること。
+    以下は非SSL設定例となっている。
+
+# vi /etc/nginx/conf.d/https.conf
+
+server {
+    server_name [zabbixサーバドメイン名];
+
+    root        /var/www/zabbix;
+    index       index.html index.php;
+    access_log  /var/log/nginx/access_zabbix.log main;
+    error_log   /var/log/nginx/error_zabbix.log error;
+
+    location ~ \.php {
+		root /var/www/zabbix;
+        fastcgi_pass    127.0.0.1:9000;
+        fastcgi_index   index.php;
+        fastcgi_param   SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+
+        fastcgi_intercept_errors        on;
+        fastcgi_ignore_client_abort     off;
+        fastcgi_connect_timeout         60;
+        fastcgi_send_timeout            180;
+        fastcgi_read_timeout            180;
+        fastcgi_buffer_size             128k;
+        fastcgi_buffers                 4       256k;
+        fastcgi_busy_buffers_size       256k;
+        fastcgi_temp_file_write_size    256k;
+    }
+}
+
+12.nginxを再起動する
+# nginx -s reload
+
+13.php-fpmの設定変更
+# vi /etc/php.ini
+
+max_execution_time = 300
+max_input_time = 300
+post_max_size = 32M
+date.timezone = Asia/Tokyo
+
+14.php-fpmをnginx権限で動作するようにする
+# vi /etc/php-fpm.d/www.conf
+
+listen.owner = nginx
+listen.group = nginx
+user = nginx
+group = nginx
+
+15.phpのセッションフォルダの権限を変更する
+# cd /var/lib/php
+# ls -ld session
+# chown nginx.nginx session
+
+16.php-fpmを自動起動するようにしておく
+# systemctl start php-fpm
+# systemctl enable php-fpm
+
+17.ブラウザからzabbixのページにアクセスする。
+
+1)[Next Step]→[Next Step]
+2)Configure DB connectionで以下設定
+  Database port=5432
+  Password=zabbixのパスワード
+3)[Next Step]
+
+18.ログインする
+  ユーザ名  ：Admin
+  パスワード：zabbix
+
+19.adminユーザのパスワードを変更する（※必ず実施すること※）
+  admin→user→admin
+  ここで日本語UIにも変更できる
+
+  guestは使わなければ消しておいたほうがいいかも
+
+
+＊監視設定＊
+
+Mastodonインスタンスを監視するための、Zabbixテンプレートを利用する。
+https://github.com/ken-washikita/zbx-templates-mstdn
+
+このテンプレートではRedis/Sidekiqを監視できる。
+
+1.フォルダを作成し、redis-latency.shを置く
+# mkdir -p /etc/zabbix/redis
+
+ファイルを置いたら権限を変更する
+# cd /etc/zabbix/redis
+# chmod +x redis-latency.sh
+
+2.redis-cronを/etc/cron.dに置く
+  cronが動作すると、/etc/zabbix/redisに2つのファイルが生成、更新され始める
+  redis-info、redis-latency
+
+3./etc/zabbix/zabbix_agentd.dディレクトリに、
+  userparameter_redis.conf、userparameter_sidekiq.confを置く
+
+4.zabbixサーバでテンプレートをインポートする。
+  設定→テンプレート→インポート
+    Template_App_Redis.xml
+    Template_App_Sidekiq_Status.xml
+    Template_AppSidekiq_Process.xml
+
+5.監視対象を設定する
+  設定→ホスト→Zabbix server→テンプレート→選択
+    Template App Redis
+    Template App Sidekiq Status
+    Template App Sidekiq Process
+  選択→追加→更新
+
+  これでRedisとsidekiqの各種パラメータが監視できるようになる。
+  必要な項目はフィルタできる。
 
 
