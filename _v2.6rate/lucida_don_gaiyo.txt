@@ -1,0 +1,75 @@
+Lucida-Memo概要
+
+-----------------------------------
+◆カスタム詳細説明
+-----------------------------------
+一人鯖「Lucida-Memo」です。<br />
+Lucida専用のインスタンスとなっています。<br />
+一般の方の新規登録を受け付ける予定はないです。<br />
+
+<hr />
+＜Index＞<br />
+わたしLucidaのmastodonアカウントやwebについてはindexページをご参照ください。<br />
+：<a target="_blank" href="https://lucida-memo.info/">index page</a><br />
+
+<hr />
+＜Server Information＞<br />
+リージョン：さくらインターネット<br />
+サーバ：VPS（スペック不明）<br />
+OS：CentOS 7.5<br />
+CPU：3Core（スペック不明）<br />
+メモリ：2GB（スペック不明）<br />
+SSD：50GB（スペック不明）<br />
+ネット帯域幅：100Mbps<br />
+webサーバ：nginx<br />
+<hr />
+
+＜Mastodon Information＞<br />
+バージョン：	v2.6.5	<br />
+
+docker：non-docker<br />
+データベース：postgreSQL<br />
+メディアストレージ：wasabi<br />
+
+<hr />
+＜History＞<br />
+2018/12/3 →mastodon v2.6.5<br />
+2018/12/1 →mastodon v2.6.4<br />
+2018/11/30 →mastodon v2.6.3<br />
+2018/11/24 →mastodon v2.6.2<br />
+2018/11/3 →ドメイン変更「lucida-memo.info」<br />
+　　　　　　mastodon v2.6.1<br />
+2018/10/29 →mastodon v2.6.0rc3<br />
+2018/10/26 →mastodon v2.6.0rc2<br />
+2018/10/23 →mastodon v2.6.0rc1<br />
+2018/10/12 →mastodon v2.5.2<br />
+2018/10/8 →mastodon v2.5.1<br />
+2018/9/3 →mastodon v2.5.0<br />
+2018/8/25 →mastodon v2.4.5<br />
+2018/8/24 クラウド→VPSに移行（mastodon v2.4.4）<br />
+2018/8/15 新設（v2.4.3）<br />
+
+
+
+-----------------------------------
+◆インスタンスの説明(短)
+-----------------------------------
+一人鯖「Lucida-Memo」 index= https://lucida-memo.info/
+
+
+
+-----------------------------------
+◆インスタンスの説明
+-----------------------------------
+一人鯖「Lucida-Memo」です。<br />
+Lucida専用のインスタンスとなっています。<br />
+一般の方の新規登録を受け付ける予定はないです。<br />
+<br />
+
+Lucidaについては以下。<br />
+　：<a target="_blank" href="https://lucida-memo.info/">index page</a><br />
+サーバのスペックなど詳細については以下。<br />
+　：<a target="_blank" href="https://mstdn.lucida-memo.info/about/more">more page</a><br />
+
+
+

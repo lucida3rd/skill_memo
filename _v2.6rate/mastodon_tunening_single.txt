@@ -1,0 +1,111 @@
+-----------------------
+mastodon チューニングメモ(最小構成向け)
+
+Lucida（lucida3rd@mstdn.lucida-memo.info）
+-----------------------
+＜概要＞
+mastodonの最適化、調整技のメモ。
+なおこのテキストは最小システム構成向けに記載している。
+基本チューニングについては mastodon_tunening.txt を参照のこと。
+
+◆mastodonのサービスチューニング
+
+
+
+---------------------------------
+＜注意事項＞
+---------------------------------
+・斜め読みしないで、各メモの効果、手順をよく確認してください。
+  よくわかんないうちは使用しないでください。
+・各メモには元ソースのリンクを貼り付けてますので、
+  よくわかんないときはそちらも合わせて確認してください。
+・このメモを使用したことによる不具合、損害について当方は責任を持ちません。
+  全て自己責任でお願いします。
+・当メモの質問は受け付けません。自己対応でお願いします。
+
+
+
+-----------------------
+＜mastodonのサービスチューニング＞
+
+上記bgBouncerを導入するのが前提になると思う。
+サービスの設定を最小稼働用(メモリ512MB向け)に見直すみたい。
+
+また併せてjmallocの導入も行う（関連設定は★印箇所）
+https://qiita.com/kumasun/items/bf4997f181f893130041
+emalloc は、標準ライブラリで定義されているmalloc, free 等のメモリアロケーションAPI。
+主にガベージコレクションを早く消化し、メモリリークを防止する働きがあるらしい。
+
+参考：
+http://crakac.hatenablog.jp/entry/2017/12/10/121956
+
+
+1.jemallocをインストールする。
+# yum install jemalloc
+# ls -la /usr/lib64/libjemalloc.so.1
+とにかくlibjemalloc*を探す。
+
+2.mastodon webサービスの調整。
+# vi /etc/systemd/system/mastodon-web.service
+......
+Environment="PORT=3000"
+Environment="WEB_CONCURRENCY=[コア数]"  ※以下全て追加
+Environment="MAX_THREADS=5"
+Environment="RUBY_GC_HEAP_INIT_SLOTS=500000"
+Environment="RUBY_GC_HEAP_GROWTH_FACTOR=1.2"
+Environment="RUBY_GC_HEAP_GROWTH_MAX_SLOTS=1000000"
+Environment="RUBY_GC_HEAP_FREE_SLOTS_MIN_RATIO=0.1"
+Environment="RUBY_GC_HEAP_FREE_SLOTS_MAX_RATIO=0.3"
+Environment="RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR=1.2"
+Environment="RUBY_GC_OLDMALLOC_LIMIT_MAX=67108864"
+Environment="LD_PRELOAD=[jmallocファイルまでの絶対パス]"★
+......
+
+3.mastodon ストリームサービスの調整。
+# vi /etc/systemd/system/mastodon-streaming.service
+......
+ExecStart=/usr/bin/npm run start
+↓
+ExecStart=/usr/bin/node streaming/index.js
+......
+※node.jsのバージョンが古いとエラーがでるかも？
+
+4.mastodon sidekiqサービスの調整。
+# vi /etc/systemd/system/mastodon-sidekiq.service
+Environment="DB_POOL=5"
+ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 5 -q default -q mailers -q pull -q push
+↓
+Environment="DB_POOL=20"
+Environment="RUBY_GC_HEAP_INIT_SLOTS=500000"
+Environment="RUBY_GC_HEAP_GROWTH_FACTOR=1.2"
+Environment="RUBY_GC_HEAP_GROWTH_MAX_SLOTS=1000000"
+Environment="RUBY_GC_HEAP_FREE_SLOTS_MIN_RATIO=0.1"
+Environment="RUBY_GC_HEAP_FREE_SLOTS_MAX_RATIO=0.3"
+Environment="RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR=1.2"
+Environment="RUBY_GC_OLDMALLOC_LIMIT_MAX=67108864"
+Environment="LD_PRELOAD=[jmallocファイルまでの絶対パス]"★
+ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 20 -q default -q push -q pull -q mailers
+
+5.mastodonサービスを再起動する。
+# systemctl daemon-reload
+# systemctl restart mastodon*
+   ※デーモンを先に再起動しないと怒られる
+
+6.スワップパラメータの調整。
+値は0から100まででデフォルトは60。大きいほどよくスワップする。
+0にするとRAMを使いきるまでスワップしない。
+100だとパフォーマンスに悪影響を及ぼすレベルでガンガンスワップする。
+
+# sysctl vm.swappiness
+vm.swappiness = [現在値]
+
+# vi /etc/sysctl.conf
+vm.swappiness = 10  ※追加
+
+再読み込みする
+# sysctl -p
+
+※ImageMagicあたりはよくわかんなかった。
+
+
+

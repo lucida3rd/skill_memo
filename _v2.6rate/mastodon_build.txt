@@ -344,8 +344,8 @@ mastodon=> \q
 ※postgreSQLのpostgresはスーパーバイザなので少し手順が異なる。
 
 3.postgresのconfigで認証方式をtrustに書き換える。
-# vi /var/lib/pgsql/[バージョン]/data/pg_hba.conf
-  vi /var/lib/pgsql/9.6/data/pg_hba.conf
+# cd /var/lib/pgsql/[バージョン]/data
+# vi pg_hba.conf
 
 以下★印の2か所
 ------

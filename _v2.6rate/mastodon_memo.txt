@@ -27,7 +27,6 @@ mastodon運用時によく使うコマンドや技をまとめます。
 インスタンスの再建・閉鎖
 　◆mastodonインスタンス爆破→再建
 　◆mastodonインスタンスの閉じ方（提案）
-　◆mastodon DB"だけ"作りなおす場合
 
 仕様メモ
 　◆mastodonの連合TL仕様（個人見解
@@ -53,7 +52,7 @@ mastodon運用時によく使うコマンドや技をまとめます。
 
 ◆nginx関係
 コンフィグ
-# vi /etc/nginx/conf.d/https.conf
+# vim /etc/nginx/conf.d/https.conf
 
 再起動
 # nginx -s reload
@@ -61,7 +60,7 @@ mastodon運用時によく使うコマンドや技をまとめます。
 
 ◆mastodonサービス関係
 mastodonコンフィグ
-# vi /home/mastodon/live/.env.production
+# vim /home/mastodon/live/.env.production
 
 mastodonのホーム
 # cd /home/mastodon/live
@@ -185,6 +184,9 @@ https://qiita.com/rice_american/items/ceae28dad13c3977e3a8
 バックアップ
 $ pg_dump <DB名> > <バックアップ名>
 
+リストア
+$ pg_dump <DB名> < <バックアップ名>
+
 バキューム（手動）
 デフォルト自動設定なので普段はやらなくていい。
 mastodonではsuperuserしか実行できない。
@@ -239,7 +241,6 @@ $ git remote rm origin
 $ git remote add origin git@github.com:[githubの自リポジトリ名]
 
 7.リポジトリからpullする。
-$ git pull
 $ git checkout [自ブランチ名]  （※初回のみ？）
 $ git fetch --tags origin
 $ git merge [自ブランチ名]  ※いるのか？？？
@@ -545,7 +546,7 @@ $ rbenv install -v [インストールしたいバージョン名]
 6.バージョンを上げる。
 $ rbenv global [5項のバージョン名]
 
-7.pathを通す。（※新規インストールの場合のみ）
+7.pathを通す。（bash向け？）
 $ echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bash_profile
 $ echo 'eval "$(rbenv init -)"' >> ~/.bash_profile
 $ exec $SHELL -l
@@ -731,48 +732,6 @@ cronファイル：
 
 
 -----------------------
-＜mastodon DBのリストア＞
-
-参考：
-https://qiita.com/rice_american/items/ceae28dad13c3977e3a8
-http://fnya.cocolog-nifty.com/blog/2017/10/mastodon-3861.html
-
-バックアップ
-$ pg_dump --superuser=postgres mastodon > <バックアップ名>
-$ cd /home/mastodon/live/public/system
-  ここもバックアップ（ファイル退避）しておく。
-
-
-リストア
-1.postgresでpostgresSQLに入る。
-# psql -U postgres
-
-2.コネクションを切断する。
-postgres # SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'mastodon' AND pid <> pg_backend_pid();
-
-3.データベースを削除して、作成する。
-postgres # drop database mastodon;
-postgres # create database mastodon;
-postgres # \q
-
-4.mastodon権限でリストアする。
-# su - mastodon
-$ cd [バックアップファイルの場所]
-$ psql mastodon < [バックアップ名]
-
-5.mastodon再起動？
-$ exit
-# systemctl restart mastodon*
-# systemctl status mastodon*
-
-6.タイムラインを再構築する。
-# su - mastodon
-$ cd live
-$ RAILS_ENV=production bundle exec bin/tootctl feeds clear
-$ RAILS_ENV=production bundle exec bin/tootctl feeds build
-
-
------------------------
 ＜mastodonインスタンス爆破→再建＞
 mastodonインスタンスを一回潰して、同じ手順で再開するときの動作要綱について。
 
@@ -829,31 +788,6 @@ Scoped order is ignored, it's forced to be batch order.
   ※確認ができない
 
 以上で鯖を閉じられると思う。
-
-
------------------------
-＜mastodon DB"だけ"作りなおす場合＞
-
-postgresユーザはスーパバイザでログインできることが前提（buildに手順あり）。
-
-1.postgresでpostgresSQLに入る。
-# psql -U postgres
-
-2.DBがある場合、データベースを削除する。
-postgres # drop database mastodon;
-
-3.DBを作成する。
-postgres # create database mastodon;
-postgres # \q
-
-4.mastodon権限でログインする。
-# su - mastodon
-$ cd live
-
-5.マイグレーションする。
-$ RAILS_ENV=production bundle exec rails db:migrate
-
-これでOK。
 
 
 -----------------------
