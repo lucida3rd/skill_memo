@@ -3,14 +3,16 @@ Mynoghra概要
 -----------------------------------
 ◆カスタム詳細説明
 -----------------------------------
-一人鯖「Mynoghra」です。<br />
-Lucida専用のインスタンスとなっています。<br />
-一般の方の新規登録を受け付ける予定はないです。<br />
+一人鯖「Mynoghra」です。趣味で建てた個人鯖となっています。<br />
+Linuxやgithubのことがわからないため、度々ご迷惑をおかけしてます。<br />
+<br />
+なお一般の方の新規登録を受け付ける予定はないです。<br />
 
 <hr />
 ＜Index＞<br />
-わたしLucidaのmastodonアカウントやwebについてはindexページをご参照ください。<br />
-：<a target="_blank" href="https://mynoghra.jp/">index page</a><br />
+わたしLucidaのmastodonアカウントやwebについては以下のIndexページをご参照ください。<br />
+アカウントは用途別に分かれています。よかったらフォローをお願いします。<br />
+　：<a target="_blank" href="https://mynoghra.jp/">index page</a><br />
 
 <hr />
 ＜Server Information＞<br />
@@ -24,15 +26,18 @@ SSD：50GB（スペック不明）<br />
 webサーバ：nginx<br />
 <hr />
 
-＜Mastodon Information＞<br />
-バージョン：	v2.6.5	<br />
-
+＜Service Information＞<br />
+Mastodon：Master追従（バージョンは下記）<br />
 docker：non-docker<br />
 データベース：postgreSQL<br />
 メディアストレージ：なし<br />
 
 <hr />
-＜History＞<br />
+＜Mastodon Version・History＞<br />
+2018/1/9 v2.7.0rc1(cf69e00)<br />
+2018/1/8 v2.7.0rc1#9759<br />
+2018/1/7 v2.6.5#9715<br />
+2018/1/3 v2.6.5#9702<br />
 2018/1/2 新設（v2.6.5#9689）<br />
 
 
@@ -40,21 +45,24 @@ docker：non-docker<br />
 -----------------------------------
 ◆インスタンスの説明(短)
 -----------------------------------
-一人鯖「Mynoghra」 index= https://mynoghra.jp/
+一人鯖「Mynoghra」<br />
+Index= https://mynoghra.jp/<br />
 
 
 
 -----------------------------------
 ◆インスタンスの説明
 -----------------------------------
-一人鯖「Mynoghra」です。<br />
-Lucida専用のインスタンスとなっています。<br />
+一人鯖「Mynoghra」です。趣味で建てた個人鯖となっています。<br />
 一般の方の新規登録を受け付ける予定はないです。<br />
 <br />
 
-Lucidaについては以下。<br />
+わたしLucidaのmastodonアカウントやwebについては以下のIndexページをご参照ください。<br />
+アカウントは用途別に分かれています。よかったらフォローをお願いします。<br />
 　：<a target="_blank" href="https://mynoghra.jp/">index page</a><br />
-サーバのスペックなど詳細については以下。<br />
+
+<br />
+サーバのスペックなど詳細については以下をご参照ください。<br />
 　：<a target="_blank" href="https://don.mynoghra.jp/about/more">more page</a><br />
 
 
