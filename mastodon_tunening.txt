@@ -45,6 +45,8 @@ http://fnya.cocolog-nifty.com/blog/2017/12/mastodon-centos.html
 
 1.OSのバージョンを確認する。
 　さくらインターネットの場合、VPSのサービス情報に記載されている。
+  それか以下のコマンド。
+# cat /proc/version
 
 2.postgreのバージョンを確認する。
 # psql -V
@@ -62,8 +64,9 @@ https://yum.postgresql.org/repopackages.php
 
 6.PgBouncerをインストールする。
 # yum -y install pgbouncer
-# systemctl restart pgbouncer
+# systemctl start pgbouncer
 # systemctl enable pgbouncer
+# systemctl status pgbouncer
 
 7.bgBouncerにパスワードを設定する。まずiniにアクセスする。
 # cd /etc/pgbouncer
@@ -76,7 +79,10 @@ https://yum.postgresql.org/repopackages.php
 # vi userlist.txt
 書式： "mastodon" "md5[10のハッシュ値]"
 
-10. 8.9と同じ要領でpgbouncerユーザを追加する。（パスワードも別で決め設定すること）
+10.pgbouncerユーザのパスワードを設定する。
+# passwd pgbouncer
+
+11. 8.9と同じ要領でpgbouncerユーザを追加する。（パスワードも別で決め設定すること）
 
 12.pgbouncer.ini の設定をする。
 
@@ -87,6 +93,8 @@ https://yum.postgresql.org/repopackages.php
 auth_type = md5
 admin_users = pgbouncer
 pool_mode = transaction
+
+※下のほうにauth_typeがもう一つあるのでコメントアウトすること
 
 ※この２つはデフォルトで問題ないけど調整可能みたい
 max_client_conn = 100
@@ -120,14 +128,15 @@ mastodon>
 
 
 16.mastodonのコンフィグを変更する。パスワードの設定と、DBのポートを変更する設定。
-# vim /home/mastodon/live/.env.production
+# vi /home/mastodon/live/.env.production
 
-PREPARED_STATEMENTS=false  ※一番上のほうに追加
 DB_HOST=localhost
 DB_USER=mastodon
 DB_NAME=[db名]
 DB_PASS=[password]  ※パスワードを設定
 DB_PORT=6432        ※ここも変更する
+
+PREPARED_STATEMENTS=false  ※コメントアウト
 
 17.mastodonサービスを再起動する。
 # systemctl restart mastodon*
@@ -236,10 +245,9 @@ https://github.com/jemalloc/jemalloc/blob/dev/INSTALL.md
 # wget [ソースコードのURL]
 # tar xvzf [アーカイブファイル名]
 # cd [解凍されたフォルダ]
-# bash autogen,sh
-# make dist
+# bash autogen.sh
+# ./configure
 # make
-
 # make install
 # ls -la /usr/local/lib/libjemalloc*
 とにかくlibjemalloc*を探す。
@@ -252,6 +260,13 @@ Environment="WEB_CONCURRENCY=[コア数]"  ※以下全て追加
 Environment="MAX_THREADS=5"
 Environment="LD_PRELOAD=[jmallocファイルまでの絶対パス]"★
 ......
+
+......コピペ用
+Environment="PORT=3000"
+Environment="WEB_CONCURRENCY=1"
+Environment="MAX_THREADS=5"
+Environment="LD_PRELOAD=/usr/local/lib/libjemalloc.so.2
+......コピペ用
 
 コア数分bundleプロセスができる。処理できるようなら調整できると思う。
 
@@ -322,7 +337,7 @@ User=mastodon
 WorkingDirectory=/home/mastodon/live
 Environment="RAILS_ENV=production"
 Environment="DB_POOL=20"
-Environment="LD_PRELOAD=[jmallocファイルまでの絶対パス]"★
+Environment="LD_PRELOAD=/usr/local/lib/libjemalloc.so.2
 ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 20 -q default,2 -q mailers,1
 TimeoutSec=15
 Restart=always
@@ -341,7 +356,7 @@ User=mastodon
 WorkingDirectory=/home/mastodon/live
 Environment="RAILS_ENV=production"
 Environment="DB_POOL=10"
-Environment="LD_PRELOAD=[jmallocファイルまでの絶対パス]"★
+Environment="LD_PRELOAD=/usr/local/lib/libjemalloc.so.2
 ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 10 -q push
 TimeoutSec=15
 Restart=always
@@ -360,7 +375,7 @@ User=mastodon
 WorkingDirectory=/home/mastodon/live
 Environment="RAILS_ENV=production"
 Environment="DB_POOL=10"
-Environment="LD_PRELOAD=[jmallocファイルまでの絶対パス]"★
+Environment="LD_PRELOAD=/usr/local/lib/libjemalloc.so.2
 ExecStart=/home/mastodon/.rbenv/shims/bundle exec sidekiq -c 10 -q pull
 TimeoutSec=15
 Restart=always
@@ -411,6 +426,8 @@ http://www.libpng.org/pub/png/libpng.html
 
 4.jpeg用にlibjpeg-develも必要
 # yum install libjpeg-devel
+  パッケージのリリースパスはここかなぁ？
+  https://pkgs.org/download/libjpeg-devel(x86-64)
 
 5.ImageMagicのイメージを展開する。
 ライブラリのフォルダからrootに移ってから作業する。
@@ -426,7 +443,7 @@ pngのライブラリパスを通すことをやってるらしい。
 # ./configure LDFLAGS='-L/usr/local/lib -R/usr/local/lib'
 
 7.gifのキャッシュを変更する
-# vi [ImageMagick]/MagickCore/quantize.c
+# vi MagickCore/quantize.c
 CacheShift = 3     //固定する
 
 8.オプションを変更する
@@ -445,7 +462,7 @@ CacheShift = 3     //固定する
 # make
 
 実行したあと最後に表示される有効オプション結果はコピペで控えておいたほうがいいかも。
-このとき--with-pngがyesになってることを確認する。
+このとき--with-png、--with-jpegがyesになってることを確認する。
 noのままであれば5でがんばってパスを通すこと。（どうやるんぢゃ？）
 
 9.インストールする。
@@ -462,6 +479,9 @@ noのままであれば5でがんばってパスを通すこと。（どうや�
 何らかの不手際でリメイクするときはmakeファイルをクリアすること。
 # make clean
 
+アンインストールする場合はディレクトリ直下で以下を実行。
+# make uninstall
+
 
 
 -----------------------
@@ -475,7 +495,7 @@ worker_rlimit_nofile、worker_connectionsをチューニングする。
 worker_rlimit_nofile
 ディスクリプリンタの値の設定ができる。ディスクリプリンタとは...わからんです。
 OSのディスクリプリンタ値は以下で調べられる。
-# $ ulimit -n
+# ulimit -n
 
 worker_connections
 nginxではworker_rlimit_nofileの値以上を設定することができない。
@@ -586,10 +606,36 @@ https://qiita.com/kumasun/items/bf4997f181f893130041
 Unix Socketを使うことで、localhost接続よりも高速化が可能となる。
 postgre、radisに適用する。
 
+なおpgBouncerをかませる場合と、なしの場合とでイメージが異なる。
+（redisは別）
+
+
+★pgBouncerあり
+≪internet≫
+　┃(unixソケット接続)
+　pgbouncer
+　┃┃(pgbouncer制御)
+　┃┗ postgreSQL
+　┃(pgbouncer制御)
+　┗ mastodonサービス
+
+★pgBouncerなし
+
+≪internet≫
+　┃┃(unixソケット接続)
+　┃┗ postgreSQL
+　┃(unixソケット接続)
+　┗ mastodonサービス
+
+
 1.postgre
 # vi /var/lib/pgsql/data/postgresql.conf
 
 unix_socket_directories = '/var/run/postgresql'
+unix_socket_permissions = 0777
+
+※pgBouncerを使用する場合はスキップ。
+  もし設定していた場合は、上記の設定をコメントすること。
 
 
 2.mastodon env
@@ -601,16 +647,25 @@ REDIS_URL=unix:///var/run/redis/redis.sock
 
 DB_HOST=/var/run/postgresql
 
+※pgBouncerを使用する場合はDB_HOSTはキャンセル。
+  もし設定していた場合は、localhostにすること。
 
-2.radis
+
+3.radis
 # vi /etc/redis.conf
 
 unixsocket /var/run/redis/redis.sock
 unixsocketperm 777
 
 
-3.mastodonを再起動する
+4.pgbouncer  ※pgbouncerありの場合
+unix_socket_dir = /var/run/pgbouncer
+unix_socket_mode = 0777
+
+
+5.mastodonを再起動する
 # systemctl daemon-reload
+# systemctl restart pgbouncer*  ※pgbouncerありの場合
 # systemctl restart mastodon*
 
 
