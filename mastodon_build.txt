@@ -382,6 +382,19 @@ mastodon=>
 mastodon=> \q
 
 
+◆mastodonユーザでsudoを使えるようにする（※オプション）
+
+参考：
+https://qiita.com/pakiln/items/525b0b635b57bf310837
+
+1.visudoを実行。
+# visudo
+
+2.rootの下にsudo権限を追加
+root    ALL=(ALL)       ALL
+mastodon    ALL=(ALL)       ALL   ←追加
+
+
 -----------------------
 ＜mastodon外部メディアストレージへの移設→wasabi＞
 
@@ -443,8 +456,10 @@ https://wasabi.com/pricing/
 2.wasabiでユーザ登録する。
 
 3.「strage」画面でバケツ（画像を入れるプロジェクトフォルダのようなもの）を作る。
-　名前はわかりやすいもので。
-　名前はメモしておく。
+　名前はわかりやすいもので。名前はメモしておく。
+　regionはここでは「us-west-1」を指定する。
+　※regionが異なると、以降の11項、15項のエンドポイントの指定が異なることに注意すること。
+　　（regionが異なると、バケツが置いてある鯖が異なるためらしい）
 
 4.バケツのポリシーに以下を貼り付けてセーブする。
 　バケツ名はエディタで編集してからにする。
@@ -487,7 +502,7 @@ https://wasabi.com/pricing/
         "s3:GetObject",
         "s3:DeleteObject"
       ],
-      "Resource": "arn:aws:s3:::【バケツ名】*"
+      "Resource": "arn:aws:s3:::【バケツ名】/*"
     }
   ]
 }
@@ -509,8 +524,8 @@ https://wasabi.com/pricing/
 　# aws configure
 　AWS Access Key ID [None]: 【API KEY】
 　AWS Secret Access Key [None]: 【SECRET API KEY】
-　Default region name [None]:（空欄）
-　Default output format [None]:（空欄）
+　Default region name [None]:us-west-1
+　Default output format [None]:json
 
 10.古いキャッシュを掃除しておく。
 　# su - mastodon
@@ -519,12 +534,15 @@ https://wasabi.com/pricing/
 　$ exit
 
 11.mastodonとバケツを同期する。かなり時間がかかります。
-　# aws s3 sync public/system/ s3://【バケツ名】/ --endpoint-url=https://s3.wasabisys.com
+　# aws s3 sync public/system/ s3://【バケツ名】/ --endpoint-url=https://s3.us-west-1.wasabisys.com
+
+　※regionがus-west-1でない場合、endpoint-urlの指定が異なるので、
+　　wasabiのサポートに問い合わせること。（HPには書いていない）
 
 12.ダミーフォルダを作成する。
   適当なところへ。
   # cd /home
-  # mkdir dummy
+  # mkdir media_dummy
 
 13.nginxにキャッシュ用のプロキシサーバ（mastodonやユーザの中継サーバ）を設定する。
 　アクセスとして、mastodonページ→プロキシ（リダイレクト）→メディアサーバとなる。
@@ -532,7 +550,7 @@ https://wasabi.com/pricing/
 
 　http層の中にまるまるコピー。
   【バケツ名】は4項でwasabiに設定したバケツ名。
-　【サブドメイン名】は1項でDNSに設定したサブドメイン名。
+　【仮想鯖名】は1項でDNSに設定したサブドメイン名。
 　【mastodonドメイン名】はmastodonのドメイン名。
 
 proxy_cache_path /tmp/nginx_mstdn_media levels=1:2 keys_zone=【バケツ名】:100m max_size=1g inactive=24h;
@@ -540,7 +558,7 @@ proxy_cache_path /tmp/nginx_mstdn_media levels=1:2 keys_zone=【バケツ名】:
 server {
     listen 80;
     listen [::]:80;
-    server_name 【サブドメイン名】;
+    server_name 【仮想鯖名】;
     return 301 https://$server_name$request_uri;
     access_log /dev/null;
     error_log /dev/null;
@@ -549,7 +567,7 @@ server {
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
-    server_name 【サブドメイン名】;
+    server_name 【仮想鯖名】;
 
 	ssl_protocols TLSv1.2;
 	ssl_ciphers EECDH+AESGCM:EECDH+AES;
@@ -566,24 +584,24 @@ server {
 	ssl_stapling_verify on;
 	resolver 8.8.8.8 8.8.4.4;
 	location ^~ /.well-known/acme-challenge/ {
-		root /home/dummy;
+		root /home/media_dummy;
 	}
 	location = /.well-known/acme-challenge/ {
 		return 404;
 	}
 
     location / {
-            proxy_cache 【バケツ名】;
-            proxy_cache_revalidate on;
-            proxy_buffering on;
-            proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
-            proxy_cache_background_update on;
-            proxy_cache_lock on;
-            proxy_cache_valid 1d;
-            proxy_cache_valid 404 1h;
-            proxy_ignore_headers Cache-Control;
-            add_header X-Cached $upstream_cache_status;
-            proxy_pass https://s3.wasabisys.com/;
+        proxy_cache 【バケツ名】;
+        proxy_cache_revalidate on;
+        proxy_buffering on;
+        proxy_cache_use_stale error timeout updating http_500 http_502 http_503 http_504;
+        proxy_cache_background_update on;
+        proxy_cache_lock on;
+        proxy_cache_valid 1d;
+        proxy_cache_valid 404 1h;
+        proxy_ignore_headers Cache-Control;
+        add_header X-Cached $upstream_cache_status;
+        proxy_pass https://s3.us-west-1.wasabisys.com/;
     }
 }
 
@@ -592,19 +610,19 @@ server {
 　エラーがでなければOK。
 
 15.mastodonのコンフィグにバケツのアクセスキーを設定する。
-　# vim .env.production
+　# vi .env.production
 
 S3_ENABLED=true
 S3_BUCKET=【バケツ名】
 AWS_ACCESS_KEY_ID=【API Key】
 AWS_SECRET_ACCESS_KEY=【Secret API Key】
-S3_REGION=【バケツのRegion】
+S3_REGION=us-west-1
 S3_PROTOCOL=https
 S3_HOSTNAME=【仮想鯖名】
-S3_ENDPOINT=https://s3.wasabisys.com/
+S3_ENDPOINT=https://s3.us-west-1.wasabisys.com/
 
 16.mastodonとバケツを同期する。差分だけの同期になる。
-　# aws s3 sync public/system/ s3://【バケツ名】/ --endpoint-url=https://s3.wasabisys.com
+　# aws s3 sync public/system/ s3://【バケツ名】/ --endpoint-url=https://s3.us-west-1.wasabisys.com
 
 17.mastodonを再起動する。
 　# systemctl restart mastodon*
@@ -618,7 +636,7 @@ S3_ENDPOINT=https://s3.wasabisys.com/
 　# sudo nginx -s reload
 
 20.キャッシュが有効かを確認する。
-　# curl -I https://media.mstdn.io/【バケツ名】/media_attachments/files/001/871/825/original/f35282636242f8c7.jpg
+　# curl -I https://【仮想鯖名】/【バケツ名】/media_attachments/files/001/871/825/original/f35282636242f8c7.jpg
 HTTP/2 200
 以下～
 
