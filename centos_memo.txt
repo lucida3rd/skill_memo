@@ -78,13 +78,45 @@ CPUの情報。コアごとに情報を出す。
 -----------------------
 ＜ユーザ管理＞
 
-ディレクトリ配下
-# ls -la
+参考：
+https://qiita.com/araish/items/b6a408e09f34e0845db1
+https://qiita.com/emowl/items/7dc09daa408907a3c6e5
 
 
+ユーザの作成
+# useradd <ユーザ名>
+　　※ホームディレクトリは/home配下にユーザ名で作成されてしまう
+
+オプションつき
+# useradd -d /users/user1 -g 551 -m -u 114514
+
+-d [dir] ログインディレクトリを設定
+-g [gid] グループIDを設定
+-m ホームディレクトリを作成
+-u [uid] ユーザーIDを設定
 
 
+パスワードの設定
+# passwd <ユーザ名>
 
 
+ユーザ削除
+# userdel <ユーザ名>
+
+-r ホームディレクトリも同時に削除
+
+
+ユーザ一覧
+# cat /etc/passwd
+名前だけ表示
+# cat /etc/passwd|sed -e 's/:.*//g'
+
+
+グループ一覧
+#cat /etc/group
+
+
+ユーザID、所属グループの確認
+# id <ユーザ名>
 
 
