@@ -545,6 +545,19 @@ postgresのconfigで認証方式をmd5に書き換える。
 # systemctl status pgbouncer*
 # systemctl status mastodon*
 
+11.クライアント機能にも反映するため、.bash_profileを修正する。
+# cd /home/mastodon
+# vi .bash_profile
+
+/usr/pgsql-9.6/bin
+↓
+/usr/pgsql-11/bin
+
+12.動作確認。
+# su - mastodon
+$ pg_dump --version
+バージョンが表示されればOK。
+
 
 タイムラインが乱れていたら再構築する。
 # su - mastodon
