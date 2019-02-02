@@ -42,4 +42,21 @@ postgresの指定接続
 # psql -h [hostname] -U [username] -d [databasename]
 
 
+-----------------------
+＜pg_dump時にパスワードなしにする＞
+
+参考：
+http://totutotu.hatenablog.com/entry/2016/05/13/161405
+
+1.ユーザのルートフォルダに移動する。
+
+2.pgpassファイルを作成する。
+# vi .pgpass
+[ホスト名]:[ポート番号]:[DB名]:[ユーザ名]:[パスワード(生)]
+
+3.権限をのみにする。
+# chmod 0600 .pgpass
+※root以外ならsudoをつける
+  $ sudo chmod 0600 .pgpass
+
 
