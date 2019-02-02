@@ -41,6 +41,7 @@ Media Strage：wasabi<br />
 
 <hr />
 ＜Mastodon Version・History＞<br />
+2019/2/2 v2.7.1#9963<br />
 2019/1/30 postgreSQL 9.6→11<br />
 2019/1/29 v2.7.1<br />
 2019/1/27 v2.7.0#re costom<br />
