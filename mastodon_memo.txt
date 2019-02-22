@@ -23,8 +23,11 @@ mastodon運用時によく使うコマンドや技をまとめます。
 　◆nginxがnginx: [error] open()で起動できない場合の対処
 　◆削除されたリモートアカウントを自分のdbから削除する
 　◆cronの設定
+　◆python3とpython2の混在
+　◆nginx+python(uwsgi)
 
 インスタンスの再建・閉鎖
+　◆mastodon DBのリストア
 　◆mastodonインスタンス爆破→再建
 　◆mastodonインスタンスの閉じ方（提案）
 　◆mastodon DB"だけ"作りなおす場合
@@ -784,6 +787,223 @@ cronファイル：
 
 
 -----------------------
+＜python3とpython2の混在＞
+
+CentOS7ではデフォルトでpython2が入ってるが、python3と混在したい。
+
+参考：https://qiita.com/glostuan/items/6030e309542615470e0d
+
+1.preenvのインストール。
+# yum install gcc zlib-devel bzip2 bzip2-devel readline readline-devel sqlite sqlite-devel openssl openssl-devel git
+# git clone https://github.com/yyuu/pyenv.git ~/.pyenv
+
+
+2. .bash_profileに以下を追記
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+
+保存して反映
+# source .bash_profile
+
+3.インストールするバージョンを確認。
+# pyenv install --list
+
+4.インストール
+# pyenv install [バージョン名]
+　例）3.5.1の場合
+　　　pyenv install 3.5.1
+
+5.バージョン切替
+# pyenv global [バージョン名]
+# pyenv rehash
+# python --version
+
+戻すにはsystemに切り返える
+# pyenv global system
+# python --version
+
+
+-----------------------
+＜nginx+python(uwsgi)＞
+
+webサーバでpythonを実行する方法。uwsgiを使う。
+なおpython3が前提。
+
+
+参考：
+https://qiita.com/waffle/items/835625c2413ff6a387c6
+https://qiita.com/koyoru1214/items/57461b920dfc11f67683
+https://qiita.com/yasunori/items/64606e63b36b396cf695
+
+
+本設定の前提として、/home/hoge/uwsgi/testapp/run.py というpythonアプリを実行するものである。
+2個以上の*.pyを動かすために testapp のディレクトリ部分を切り替えて利用する。
+
+1個目：/uwsgi/testapp/run.py
+2個目：/uwsgi/testapp_2/run.py
+となる。
+
+なおuwsgi→nginx間はUnixソケットで通信をおこなう。
+
+ので、このソケットファイル名設定周りを調整すれば、他のやり方もあります。
+  ということで、バカっぽい前提を記載しましたw
+
+
+1.uwsgiをインストールする。
+# pip3 install uwsgi
+# uwsgi --version
+2.0.17.1  ※バージョンが表示されればOK。
+
+1.nginxの設定。
+既設の設定に、/uwsgi/testapp/ にアクセスしたときに uwsgiの処理が動くよう設定を加える。
+
+server {
+    listen 443 ssl;
+    server_name example.com;
+    root /home/hoge;
+
+    location / {
+        index  index.html index.htm;
+    }
+
+    #--------------------------------------------
+    #ここを追記
+    location /uwsgi/[アプリ名] {
+        include uwsgi_params;
+        uwsgi_pass unix:///var/run/uwsgi/[アプリ名].sock;
+        uwsgi_connect_timeout 600s;
+        uwsgi_read_timeout 600s;
+    }
+    #--------------------------------------------
+
+}
+
+前提に合わせると [アプリ名] = testapp となります。
+
+
+2.uwsgiの設定を作る。
+uwsgiの基本設定です。まんま記載。
+
+# mkdir -p /etc/uwsgi/vassals
+# vi /etc/uwsgi/emperor.ini
+
+[uwsgi]
+emperor = /etc/uwsgi/vassals
+uid = nginx
+gid = nginx
+logto = /var/log/uwsgi/uwsgi.log
+touch-logreopen = /var/log/uwsgi/touch-logreopen
+master = true
+vacuum = true
+ignore-sigpipe = true
+ignore-write-errors = true
+disable-write-exception = true
+
+
+アプリ毎のiniファイルのテンプレートを作成する。
+# vi /etc/uwsgi/vhosts.ini
+
+[uwsgi]
+chdir = /home/hoge/uwsgi/%n
+module = run
+socket = /var/run/uwsgi/%n.sock
+chmod-socket = 666
+reload-mercy = 1
+processes = %k
+die-on-term = true
+py-autoreload = 1
+enable-threads = true
+threads = 8
+
+
+%n = 3のリンボリックリンク指定の拡張子を除いたファイル名が入る。
+     前提に合わせると、アプリ名 testapp が入る。
+
+module 属性には、拡張子を除いたpythonアプリ名が入る。
+
+
+3.バーチャルホストiniにシンボリックリンクを作成する。
+# ln -s /etc/uwsgi/vhosts.ini /etc/uwsgi/vassals/[アプリ名].ini
+  前提に合わせると、アプリ名 = testapp が入る。
+
+つまり、リンボリックリンクファイル名によって、ini内の %n が切り替わる。
+
+
+4.uwsgiのサービス化。
+# vi /etc/systemd/system/uwsgi.service
+
+[Unit]
+Description=uWSGI Emperor
+After=syslog.target
+
+[Service]
+ExecStartPre=-/bin/mkdir -p /var/log/uwsgi
+ExecStartPre=-/bin/chown -R nginx:nginx /var/log/uwsgi
+ExecStartPre=-/bin/mkdir -p /var/run/uwsgi
+ExecStartPre=-/bin/chown -R nginx:nginx /var/run/uwsgi
+ExecStart=/usr/bin/uwsgi --ini /etc/uwsgi/emperor.ini
+RuntimeDirectory=uwsgi
+Restart=always
+KillSignal=SIGQUIT
+Type=notify
+StandardError=syslog
+NotifyAccess=all
+
+[Install]
+WantedBy=multi-user.target
+
+
+# systemctl start uwsgi
+# systemctl status uwsgi
+# systemctl enable uwsgi
+
+あと、/var/run/uwsgi/[アプリ名].sock が出来ていることも確認する。
+
+
+5.uwsgiの循環ログ
+cronでログを消してくれる設定らしい。
+
+# vi /etc/logrotate.d/uwsgi
+
+/var/log/uwsgi/uwsgi.log {
+    compress
+    daily
+    missingok
+    notifempty
+    rotate 7
+    sharedscripts
+    size 1M
+    postrotate
+        touch /var/log/uwsgi/touch-logreopen
+    endscript
+}
+
+
+6.nginxとuwsgiを再起動する。
+# systemctl restart nginx
+# systemctl restart uwsgi
+# systemctl status nginx
+# systemctl status uwsgi
+
+
+7.テスト用アプリを作る。
+# vi /home/hoge/uwsgi/testapp/run.py
+
+----------
+# coding: UTF-8
+def application(env, start_response):
+    start_response('200 OK', [('Content-Type','text/html')])
+    return b'<html><body>Hello, world.</body></html>'
+----------
+
+
+8.ブラウザからアクセスして、Hello, world. が表示されればOK。
+URL： https://localhost/uwsgi/testapp/
+
+
+
+-----------------------
 ＜mastodon DBのリストア＞
 
 参考：
@@ -907,124 +1127,6 @@ $ cd live
 $ RAILS_ENV=production bundle exec rails db:migrate
 
 これでOK。
-
-
------------------------
-＜nginx+python(uwsgi)＞
-
-webサーバでpythonを実行する方法。uwsgiを使う。
-なおpython2.0が前提。
-
-参考：
-https://qiita.com/waffle/items/835625c2413ff6a387c6
-
-1.uwsgiをインストールする。
-# pip install uwsgi
-# uwsgi --version
-2.0.17.1  ※バージョンが表示されればOK。
-
-2.uwsgiの設定を作る。
-# mkdir -p /etc/uwsgi/vassals
-# vi /etc/uwsgi/emperor.ini
-
-[uwsgi]
-emperor = /etc/uwsgi/vassals
-uid = nginx
-gid = nginx
-logto = /var/log/uwsgi/uwsgi.log
-touch-logreopen = /var/log/uwsgi/touch-logreopen
-master = true
-vacuum = true
-ignore-sigpipe = true
-ignore-write-errors = true
-disable-write-exception = true
-
-# vi /etc/uwsgi/vhosts.ini
-
-[uwsgi]
-chdir = /home/app/%n/wsgi    ※pythonの実行ルート
-module = wsgi:application
-socket = /var/run/uwsgi/%n.sock
-chmod-socket = 644
-reload-mercy = 1
-processes = %k
-die-on-term = true
-py-autoreload = 1
-enable-threads = true
-threads = 8
-
-3.シンボリックリンクを作成。
-# cd /etc/uwsgi/vassals
-# ln -s ../vhosts.ini example.com.ini
-
-4.uwsgiのサービス化。
-# vi /etc/systemd/system/uwsgi.service
-
-[Unit]
-Description=uWSGI Emperor
-After=syslog.target
-
-[Service]
-ExecStartPre=-/bin/mkdir -p /var/log/uwsgi
-ExecStartPre=-/bin/chown -R nginx:nginx /var/log/uwsgi
-ExecStartPre=-/bin/mkdir -p /var/run/uwsgi
-ExecStartPre=-/bin/chown -R nginx:nginx /var/run/uwsgi
-ExecStart=/usr/bin/uwsgi --ini /etc/uwsgi/emperor.ini
-RuntimeDirectory=uwsgi
-Restart=always
-KillSignal=SIGQUIT
-Type=notify
-StandardError=syslog
-NotifyAccess=all
-
-[Install]
-WantedBy=multi-user.target
-
-# systemctl start uwsgi
-# systemctl status uwsgi
-# systemctl enable uwsgi
-
-5.uwsgiの循環ログ
-# vi /etc/logrotate.d/uwsgi
-
-/var/log/uwsgi/uwsgi.log {
-    compress
-    daily
-    missingok
-    notifempty
-    rotate 7
-    sharedscripts
-    size 1M
-    postrotate
-        touch /var/log/uwsgi/touch-logreopen
-    endscript
-}
-
-6.nginxの設定。
-
-server {
-    listen 443 ssl;
-    server_name example.com;
-    root /home/app/example.com;
-    location / {
-        try_files /resource$uri @uwsgi;
-    }
-    location @uwsgi {
-        include uwsgi_params;
-        uwsgi_pass unix:///var/run/uwsgi/example.com.sock;
-        uwsgi_connect_timeout 600s;
-        uwsgi_read_timeout 600s;
-    }
-    ssl_certificate     /etc/nginx/ssl/self_signed.crt;
-    ssl_certificate_key /etc/nginx/ssl/self_signed.key;
-}
-
-
-
-
-
-
-
 
 
 -----------------------
