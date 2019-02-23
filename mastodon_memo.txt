@@ -787,41 +787,39 @@ cronファイル：
 
 
 -----------------------
-＜python3とpython2の混在＞
+＜python3のインストール(CentOS7)＞
 
-CentOS7ではデフォルトでpython2が入ってるが、python3と混在したい。
+CentOS7ではデフォルトでpython2が入ってるが、python3を使いたい。
+普通にpython3をインストールして、シンボリックリンクで切り替えればよい。
 
-参考：https://qiita.com/glostuan/items/6030e309542615470e0d
-
-1.preenvのインストール。
-# yum install gcc zlib-devel bzip2 bzip2-devel readline readline-devel sqlite sqlite-devel openssl openssl-devel git
-# git clone https://github.com/yyuu/pyenv.git ~/.pyenv
+参考：
+https://qiita.com/hasegit/items/6228da974c5837a1c393
 
 
-2. .bash_profileに以下を追記
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
+1.pythonの公式からソースコードを持ってくる。
+　公式URL：https://www.python.org/downloads/source/
 
-保存して反映
-# source .bash_profile
+# wget [本家URL]
+# tar xzf [アーカイブ名]
+# cd [解凍フォルダ名]
 
-3.インストールするバージョンを確認。
-# pyenv install --list
+2.コンパイル＆インストールする。
+# ./configure --prefix=/usr/local/python362 --with-ensurepip
 
-4.インストール
-# pyenv install [バージョン名]
-　例）3.5.1の場合
-　　　pyenv install 3.5.1
+pipをインストールする（無ければ）
+# # yum -y install zlib-devel openssl-devel tk-devel
 
-5.バージョン切替
-# pyenv global [バージョン名]
-# pyenv rehash
-# python --version
+# make
+# make test
+# make install
 
-戻すにはsystemに切り返える
-# pyenv global system
-# python --version
+3.python3とpip3にシンボリックを張る。
+　/usr/local直下のインストールフォルダは確認すること。
+# ln -s /usr/local/python362/bin/python3.7 /bin/python3
+# ln -s /usr/local/python362/bin/pip3.7 /bin/pip3
+
+4.バージョンを確認する。
+# python3 -V
 
 
 -----------------------
