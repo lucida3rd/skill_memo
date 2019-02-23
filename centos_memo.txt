@@ -33,6 +33,15 @@ CentOS（ver.7）運用時によく使うコマンドや技をまとめます。
 現在のパス
 # pwd
 
+ファイルの削除
+# rm [名前]
+
+ディレクトリの作成
+# mkdir [名前]
+
+ディレクトリの強制削除
+# rm -rf [名前]
+
 エラーログ
 # cd /var/spool/mail
 
@@ -98,6 +107,10 @@ https://qiita.com/emowl/items/7dc09daa408907a3c6e5
 
 パスワードの設定
 # passwd <ユーザ名>
+
+
+ホームディレクトリの変更
+# usermod -d /home/new-home <ユーザ名>
 
 
 ユーザ削除
