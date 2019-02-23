@@ -8,6 +8,12 @@ postgreSQL 運用時によく使うコマンドや技をまとめます。
 
 ◆よく使うコマンド
 
+◆データベース操作
+◆ユーザ操作
+
+◆テクニック
+　◇pg_dump時にパスワードなしにする
+
 
 
 ---------------------------------
@@ -24,7 +30,7 @@ postgreSQL 運用時によく使うコマンドや技をまとめます。
 
 
 -----------------------
-＜postgreSQLコマンド＞
+＜よく使うコマンド＞
 dbファイルの場所（どっちか）
 # cd /usr/local/pgsql/ 
 # /var/lib/pgsql/
@@ -40,6 +46,90 @@ db一覧と使用量の確認
 
 postgresの指定接続
 # psql -h [hostname] -U [username] -d [databasename]
+
+
+参考資料：
+PostgreSQLの基本的なコマンド
+https://qiita.com/H-A-L/items/fe8cb0e0ee0041ff3ceb
+
+テーブルの作成
+http://www.ne.jp/asahi/davinci/code/lapp/postgresql/index3.html
+
+
+
+-----------------------
+＜データベース操作＞
+外からDB一覧 (*SP)
+$ psql -l
+
+DB一覧
+=> \l
+
+DBの作成 (*SP)
+=> create database [DB名];
+
+DBの削除 (*SP)
+=> drop database [DB名];
+
+
+
+-----------------------
+＜ユーザ操作＞
+ROLEの作成
+=> create role [ユーザ名] with password '[パスワード]';
+
+パスワードの変更
+=> alter role [ユーザ名] with password '[パスワード]';
+
+LOGIN権限の付与
+=> create role [ユーザ名] with login;
+
+ROLEの削除
+=> dropuser [ユーザ名]
+
+
+
+-----------------------
+＜テーブル操作＞
+
+一覧
+=> \dt
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-----------------------
+＜python3からpostgresへの接続＞
+
+参考：
+https://qiita.com/wassyoi06/items/cf89aa29a14f82672648
+
+1.最新のpsycopg2をインストールする
+# pip install -U pip
+# pip install psycopg2
+# pip install psycopg2-binary
+
+2.接続コードサンプル
+
+import psycopq2
+connection = psycopg2.connect(host="localhost", database="[DB名]", user="[ユーザー名]",password="[パスワード]")
+
+
+psycopg2 でよくやる操作まとめ
+https://qiita.com/hoto17296/items/0ca1569d6fa54c7c4732
+
 
 
 -----------------------
@@ -58,5 +148,6 @@ http://totutotu.hatenablog.com/entry/2016/05/13/161405
 # chmod 0600 .pgpass
 ※root以外ならsudoをつける
   $ sudo chmod 0600 .pgpass
+
 
 
