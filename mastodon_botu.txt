@@ -1,8 +1,9 @@
------------------------
-mastodon 没メモ
+---------------------------------
+  mastodon 没メモ
+    ::Admin= Lucida（lucida3rd@mstdn.mynoghra.jp）
+    ::github= https://github.com/lucida3rd/skill_memo
+---------------------------------
 
-Lucida（lucida3rd@mstdn.lucida-memo.info）
------------------------
 ＜概要＞
 
 よくわかんなかった技術。もしくは調整中の技術。

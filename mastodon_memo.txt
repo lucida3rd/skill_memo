@@ -1,8 +1,9 @@
------------------------
-mastodon 運用メモ
+---------------------------------
+  mastodon 運用メモ
+    ::Admin= Lucida（lucida3rd@mstdn.mynoghra.jp）
+    ::github= https://github.com/lucida3rd/skill_memo
+---------------------------------
 
-Lucida（lucida3rd@mstdn.lucida-memo.info）
------------------------
 ＜概要＞
 mastodon運用時によく使うコマンドや技をまとめます。
 
@@ -15,6 +16,7 @@ mastodon運用時によく使うコマンドや技をまとめます。
 　◆postgreのアップデート手順
 　◆rubyアップデート手順
 　◆yarnアップデート手順
+　◆pipアップデート手順
 　◆SSL証明書の更新
 
 運用テクニック
@@ -620,8 +622,18 @@ yarnのアップデートを行うこと。
 コマンドはWARNNINGに記載されているが、念のため以下にも記載する。
 
 # su - mastodon
-$ cd live
 $ curl --compressed -o- -L https://yarnpkg.com/install.sh | bash
+
+
+-----------------------
+＜pipアップデート手順＞
+pipのアップグレードは以下の通り。
+
+Python3：
+# pip3 install --upgrade pip
+
+Python2：
+# pip install --upgrade pip
 
 
 -----------------------

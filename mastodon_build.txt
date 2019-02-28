@@ -1,8 +1,9 @@
------------------------
-mastodon インスタンス建立メモ
+---------------------------------
+  mastodon インスタンス建立メモ
+    ::Admin= Lucida（lucida3rd@mstdn.mynoghra.jp）
+    ::github= https://github.com/lucida3rd/skill_memo
+---------------------------------
 
-Lucida（lucida3rd@mstdn.lucida-memo.info）
------------------------
 ＜概要＞
 mastodonインスタンスを建てる方法メモ。
 さくらインターネットでCentOSを使った手順です。

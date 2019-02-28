@@ -1,4 +1,8 @@
-Mynoghra概要
+---------------------------------
+  Mynoghra概要
+    ::Admin= Lucida（lucida3rd@mstdn.mynoghra.jp）
+    ::github= https://github.com/lucida3rd/skill_memo
+---------------------------------
 
 -----------------------------------
 ◆カスタム詳細説明

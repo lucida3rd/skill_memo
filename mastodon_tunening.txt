@@ -1,8 +1,9 @@
------------------------
-mastodon チューニングメモ
+---------------------------------
+  mastodon チューニングメモ
+    ::Admin= Lucida（lucida3rd@mstdn.mynoghra.jp）
+    ::github= https://github.com/lucida3rd/skill_memo
+---------------------------------
 
-Lucida（lucida3rd@mstdn.lucida-memo.info）
------------------------
 ＜概要＞
 mastodonの最適化、調整技のメモ。
 
