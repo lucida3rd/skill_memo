@@ -254,6 +254,9 @@ L41：git clone [自分のgithubリポジトリのパス].git live
 　　1時間以上はTeraTermなどでログインしないこと。
     待ってる間、7まで進められる。
 
+ログ
+# vi /root/.sakuravps/startup.log
+
 7.各種設定>ホスト名逆引き登録でドメインを設定する
 　カスタムでドメイン名（サブドメイン抜き）を登録。
 
@@ -347,6 +350,7 @@ mastodon=> \q
 3.postgresのconfigで認証方式をtrustに書き換える。
 # vi /var/lib/pgsql/[バージョン]/data/pg_hba.conf
   vi /var/lib/pgsql/9.6/data/pg_hba.conf
+  vi /var/lib/pgsql/11/data/pg_hba.conf
 
 以下★印の2か所
 ------
@@ -358,7 +362,8 @@ local   all             all                                     trust	★
 host    all             all             127.0.0.1/32            trust	★
 ------
 
-4.サーバをリブートする。
+4.postgreサービスを再起動する。
+# systemctl restart postgresql*
 
 5.postgresにログインする。
 # psql -U postgres
@@ -547,7 +552,7 @@ https://wasabi.com/pricing/
 
 13.nginxにキャッシュ用のプロキシサーバ（mastodonやユーザの中継サーバ）を設定する。
 　アクセスとして、mastodonページ→プロキシ（リダイレクト）→メディアサーバとなる。
-　# vim /etc/nginx/conf.d/https.conf
+　# vi /etc/nginx/conf.d/https.conf
 
 　http層の中にまるまるコピー。
   【バケツ名】は4項でwasabiに設定したバケツ名。

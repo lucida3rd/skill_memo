@@ -377,6 +377,8 @@ mastodon-sidekiq.service
 
 https://qiita.com/Yorinton/items/00ad34f3f902ed41c12f
 
+https://co.bsnws.net/article/139
+
 リリース
 https://nodejs.org/ja/
 
@@ -393,6 +395,7 @@ mastodonではこの方法でならアップデートが楽になりそう。
 3. Node.jsをアップデートする
 # n stable     安定版
 # n latest     最新版
+# n lts        長期サポート版(上の2つより古いけど安定している)
 
 sudoの設定をすれば効くらしい。
 この場合、グローバルアップデートにはならない？（わからん）
@@ -819,7 +822,7 @@ https://qiita.com/hasegit/items/6228da974c5837a1c393
 # ./configure --prefix=/usr/local/python362 --with-ensurepip
 
 pipをインストールする（無ければ）
-# # yum -y install zlib-devel openssl-devel tk-devel
+# yum -y install zlib-devel openssl-devel tk-devel
 
 # make
 # make test
@@ -861,9 +864,12 @@ https://qiita.com/yasunori/items/64606e63b36b396cf695
 
 
 1.uwsgiをインストールする。
-# pip3 install uwsgi
+# pip install uwsgi
 # uwsgi --version
 2.0.17.1  ※バージョンが表示されればOK。
+
+※pip3 install uwsgiだとバイナリが上手くインストールできなくて、サービス開始できない。
+
 
 1.nginxの設定。
 既設の設定に、/uwsgi/testapp/ にアクセスしたときに uwsgiの処理が動くよう設定を加える。
@@ -915,7 +921,7 @@ disable-write-exception = true
 # vi /etc/uwsgi/vhosts.ini
 
 [uwsgi]
-chdir = /home/hoge/uwsgi/%n
+chdir = /home/hoge/uwsgi/%n　　※実行ルートフォルダ
 module = run
 socket = /var/run/uwsgi/%n.sock
 chmod-socket = 666

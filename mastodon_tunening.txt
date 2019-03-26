@@ -105,6 +105,7 @@ default_pool_size = 20
 13.保存したらpostgresqlのログイン設定をmd5に変更する。
    ※ユーザ個別、DB個別でも設定できるっぽいけど、まあまあ。
 # vi /var/lib/pgsql/9.6/data/pg_hba.conf
+# vi /var/lib/pgsql/11/data/pg_hba.conf
 ------
 # TYPE  DATABASE        USER            ADDRESS                 METHOD
 ###local   all             all                                     peer
@@ -137,7 +138,7 @@ DB_NAME=[db名]
 DB_PASS=[password]  ※パスワードを設定
 DB_PORT=6432        ※ここも変更する
 
-PREPARED_STATEMENTS=false  ※コメントアウト
+PREPARED_STATEMENTS=false  ※コメントアウト解除
 
 17.mastodonサービスを再起動する。
 # systemctl restart mastodon*
