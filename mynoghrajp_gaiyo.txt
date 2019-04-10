@@ -43,6 +43,14 @@ Database：postgreSQL<br />
 Media Strage：wasabi<br />
 　　<img src="https://mynoghra.jp/rule/_res/mynoghra_mastodon_bnr.jpg" /><br />
 
+<hr />
+＜Participating Relay Server＞<br />
+YUKIMOCHI Toot Relay Service<br />
+　　URL：<a target="_blank" href="https://relay.toot.yukimochi.jp">https://relay.toot.yukimochi.jp</a><br />
+
+Hashtag Relay Service<br />
+　　URL：<a target="_blank" href="https://hashtag-relay.dtp-mstdn.jp">https://hashtag-relay.dtp-mstdn.jp</a><br />
+
 
 
 -----------------------------------

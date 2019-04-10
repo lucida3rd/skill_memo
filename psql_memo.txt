@@ -83,7 +83,7 @@ ROLEの作成
 => alter role [ユーザ名] with password '[パスワード]';
 
 LOGIN権限の付与
-=> create role [ユーザ名] with login;
+=> alter role [ユーザ名] with login;
 
 ROLEの削除
 => dropuser [ユーザ名]
