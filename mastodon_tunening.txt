@@ -244,6 +244,8 @@ https://github.com/jemalloc/jemalloc/releases
 インストール
 https://github.com/jemalloc/jemalloc/blob/dev/INSTALL.md
 
+https://gist.github.com/zonomasa/a771e44ebd334fce0c6b
+
 # wget [ソースコードのURL]
 # tar xvzf [アーカイブファイル名]
 # cd [解凍されたフォルダ]
