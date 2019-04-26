@@ -95,3 +95,83 @@ Hashtag Relay Service<br />
 
 
 
+-----------------------------------
+◆カスタム利用規約
+-----------------------------------
+<h2 style="margin-top:32px">mastodon利用規約 ::mastodon Rules</h2>
+当サーバではさくらインターネットのVPSサーバと、外部ストレージとしてwasabi、基本ソフトとしてmastodonのシステムを利用してます。<br />
+基本的な規約、ライセンスはサーバの管理会社、mastodonの利用規約、GUNフリーソフトライセンス、およびに準拠します。
+また当方で定めているサイト利用規約のもとで運用しています。<br />
+<div style="margin-left:24px">
+This server uses Sakura Internet's VPS server, wasabi as external storage, and mastodon's system as basic software. <br />
+The basic terms and conditions of the license are in accordance with the server management company, the terms of service of mastodon, the free GUN software license, and
+In addition, we operate under the site terms of use defined by us. <br />
+</div>
+
+<ul style="margin-top:12px; margin-left:32px; margin-bottom:24px;">
+<li><a target="_blank" href="https://mastodon.social/terms">mastodon利用規約(本家)</a><br />
+	　::mastodon Terms of Use (Home)<br />
+	</li>
+<li><a target="_blank" href="https://github.com/lucida3rd/mastodon">mastodon Readme(ライセンス項参照)</a><br />
+	　::Mastodon Readme (see license section)<br />
+	</li>
+<li><a target="_blank" href="https://mynoghra.jp/rule/">mynoghra.jpサイト利用規約</a><br />
+	　::mynoghra.jp Site Rules<br />
+	</li>
+</ul>
+
+
+<h2 style="margin-top:32px">収集している情報 ::Information collected</h2>
+mastodonのシステムでは処理のため、トゥートを発信したユーザの情報を収集しています。<br />
+
+<ul style="margin-top:12px; margin-left:32px; margin-bottom:24px;">
+<li>アカウント情報(アカウント名、IPアドレスなど)<br />
+	　::Account information (account name, IP address, etc.)<br />
+	</li>
+<li>投稿情報(画像を含むトゥート内容、アプリケーション名)<br />
+	　::Post information (Toot content including image, application name)<br />
+	</li>
+</ul>
+
+
+<h2 style="margin-top:32px">情報の保護方針 ::Information protection policy</h2>
+サーバのセキュリティ対策についてはサーバの管理に依存し、保護しています。
+通信はSSL暗号化通信で保護しています。<br />
+当サイトへのIPアドレスを含むすべての要求に対するサーバーログを90日以内のできるかぎりの間保持します。
+登録されたユーザーに関連付けられたIPアドレスを12ヵ月以内の間保持します。<br />
+<div style="margin-left:24px">
+Server security measures depend on server management and are protected.
+Communication is protected by SSL encrypted communication. <br />
+Keep server logs for all requests including IP address to this site for as long as possible within 90 days.
+Retain the IP address associated with the registered user for up to 12 months. <br /></div>
+
+
+<h2 style="margin-top:32px">情報の取り扱い ::Handling of information</h2>
+ここで収集した情報のうち、個人を特定できる情報を外部へ販売、取引、その他方法で渡すことはありません。
+また公に公表することはありません。<br />
+例外として日本国の法令機関、警察、検察などの捜査協力を受けた場合、この情報を開示することがあります（発信元の外部サーバのポリシーに準拠します）。<br />
+<div style="margin-left:24px">
+The system of mastodon collects the information of the user who sent the toot for processing.
+Of the information collected here, we do not sell, trade, or otherwise pass personally identifiable information.
+Also, there is no public announcement. <br />
+As an exception, we may disclose this information if we receive investigation cooperation with Japanese law agencies, police, prosecutors, etc. (Follows the policy of the originating external server) <br />
+</div>
+
+
+<h2 style="margin-top:32px">遮断ポリシー ::Blocking policy</h2>
+前述規約に違反している外部のアカウント、サーバは、mastodonのブロック機能にて遮断する場合があります。
+また、サーバの負荷軽減対策として、トラヒックが高いサーバ、もしくは個人アカウントを管理権限でブロック処置している場合があります。<br />
+詳しくは以下の運用情報を参照ください。<br />
+<div style="margin-left:24px">
+The system of mastodon collects the information of the user who sent the toot for processing.
+Of the information collected here, we do not sell, trade, or otherwise pass personally identifiable information.
+Also, there is no public announcement. <br />
+As an exception, we may disclose this information if we receive investigation cooperation with Japanese law agencies, police, prosecutors, etc. (Follows the policy of the originating external server) <br />
+</div>
+
+
+<h2 style="margin-top:32px">運用情報について ::Site Info</h2>
+当サーバのmastodonアカウントの運用ルールについては以下を参照ください。<br />
+　　URL：<a target="_blank" href="https://mynoghra.jp/unyo/index.html#a004">mastodonアカウントの運用ルール</a><br />
+
+
