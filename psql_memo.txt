@@ -152,3 +152,55 @@ http://totutotu.hatenablog.com/entry/2016/05/13/161405
 
 
 
+-----------------------
+＜手動バキューム＞
+
+PostgreSQLでデータの更新(update)、削除(delete)を行うと変更前のデータは物理的には消されずに残り続ける。
+deleteはデータに削除マークを付けただけで、データは消去されない。そのためデータの更新を行い続けると
+データベースファイルのサイズがどんどん大きくなっていく。
+PostgreSQLではVACUUMという機能を持っており、これを実行することで消されずに残り続けている不要領域を回収できる。
+デフォルトではVACUUMは自動実行される設定になっているため、いつ実行されるのかはPostgres任せになっている。
+
+これを手動で実行するための手順は以下の通り。
+なお、他の手順を利用すればテーブル単位でも実行可能だが、ここではデータベース単位で実行するものとする。
+
+1.DBを使用しているサービス（mastodonと、ねんのためnginx）を止める。
+# systemctl stop mastodon*
+# systemctl stop nginx*
+
+
+2.postgresのスーパーバイザでログインする。
+
+# su - [スーパーバイザユーザ名]
+
+
+3.DBに接続する。
+$ psql -U [スーパーバイザユーザ名] -d [DB名]
+パスワードはスーパーバイザユーザのものを入力。
+
+各DBのサイズチェック。
+=> SELECT datname, pg_size_pretty(pg_database_size(datname)) FROM pg_database;
+
+4.バキュームの実行。
+=> vacuum full;
+
+=> SELECT datname, pg_size_pretty(pg_database_size(datname)) FROM pg_database;
+要領が小さくなっているはず。
+
+
+なおスーパーバイザでログインしない場合、vacuumできないテーブルはエラーになるが、
+それ以外の共通領域はvacuumされるので少しは要領が小さくなっているはず。
+
+
+5.サーバを再起動する。
+=> \q
+$ exit
+# reboot
+
+ブートが完了したらサービスの状態を確認すること。
+# systemctl status mastodon*
+# systemctl status nginx*
+# systemctl status postgres*
+
+
+
