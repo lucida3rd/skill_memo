@@ -18,6 +18,7 @@ mastodon運用時によく使うコマンドや技をまとめます。
 　◆yarnアップデート手順
 　◆pipアップデート手順
 　◆SSL証明書の更新
+　◆gccのバージョンアップ（CentOS）
 
 運用テクニック
 　◆サーバへの接続
@@ -637,6 +638,109 @@ Python3：
 
 Python2：
 # pip install --upgrade pip
+
+
+-----------------------
+＜gccのバージョンアップ＞
+
+参考：
+https://www.server-memo.net/memo/gcc-install.html
+
+
+CentOSのデフォルトのgccのバージョンは古く、最新のmasotodonではバージョンアップが必要になる。
+gccとはGNU Compiler Collectionの略で、GNUプロジェクトが開発および配布している、さまざまなプログラミング言語のコンパイラ集のこと。
+
+1.gccのバージョンを確認する。
+# gcc -dumpversion
+
+2.gccとgcc++をインストールする。
+# yum install gcc
+# yum install gcc-c++
+
+3.gccのソースを入手する。
+
+ftp
+https://gcc.gnu.org/mirrors.html
+
+日本からダウンロードおすすめ。
+http://ftp.tsukuba.wide.ad.jp/software/gcc/releases/
+
+# wget [URL]
+gzとsha512.sumをダウンロードする。
+
+# sha512sum --check sha512.sum
+gzがOK表示ならチェックサムOK
+
+# tar xzf [アーカイブ名]
+# cd [解凍フォルダ名]
+
+4.必要なライブラリをダウンロードする。
+# ./contrib/download_prerequisites
+
+5.コンパイルしてインストールする。（さくらのVPSの場合、オプションはまんまでもよさそう）
+# mkdir build
+# cd build
+# ../configure --enable-languages=c,c++ --prefix=/usr/local --disable-bootstrap --disable-multilib
+# make
+# make install
+
+※うちの環境でmakeに45分かかりました。
+
+バージョンチェック
+# /usr/local/bin/gcc --version
+
+6.ld.so.confに設定する。
+# vi /etc/ld.so.conf
+
+以下を追記して、保存する
+/usr/local/lib64
+
+
+設定を反映する。
+# ldconfig -v
+/usr/local/lib64ディレクトリが読み込まれていることを確認
+
+
+※pythonが導入されている環境で次のようなメッセージが出た場合の対処。
+　ldconfig: /usr/local/lib64/libstdc++.so.6.0.25-gdb.py is not an ELF file - it has the wrong magic bytes at the start.
+
+　CentOS7にはデフォルトでpython2がインストールされるので出ると思います。
+
+以下を実行する。
+# mv /usr/local/lib64/libstdc++.so.6.0.25-gdb.py  /usr/local/lib64/back_libstdc++.so.6.0.25-gdb.py
+# ldconfig
+
+
+7./etc/ld.so.conf.dにファイルを作成する
+# cd /etc/ld.so.conf.d
+# vi usr-local-lib64.conf
+
+以下を追記して、保存する
+/usr/local/lib64
+
+反映する。
+# ldconfig -v
+
+
+以下はgccを使うユーザごとに設定すること。
+LD_LIBRARY_PATHに設定する。
+
+# cd
+# vi .bash_profile
+
+以下を追記する。
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib64
+
+# source .bash_profile
+
+バージョンを確認する。
+# gcc -dumpversion
+
+
+
+gccをアンインストールする場合。
+# cd build
+# make uninstall
 
 
 -----------------------
