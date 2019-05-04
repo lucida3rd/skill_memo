@@ -21,6 +21,7 @@ mastodon本体とその周辺のセットアップ
 　◆エディタ：vimの導入（vimがインストールされなかった場合）
   ◆phpの導入
   ◆Zabbixの導入
+  ◆TeraTermでSSL鍵接続の方法
 
 
 ---------------------------------
@@ -947,5 +948,70 @@ cat $WORKFILE | cut -d ' ' -f 2 > $SAVEFILE
 
   これでRedisとsidekiqの各種パラメータが監視できるようになる。
   必要な項目はフィルタできる。
+
+
+
+---------------------------------
+＜TeraTermでSSL鍵接続の方法＞
+サーバにTeraTermでSSL鍵接続する方法。
+
+参考：
+https://blog.ueda.tech/?page_id=10088
+
+1.TeraTermを導入する。
+ホームページ： https://ja.osdn.net/projects/ttssh2/
+
+2.TeraTermでサーバに接続する。
+ユーザ名  ：サーバに接続する時のユーザ名（初回はrootユーザとか）
+パスワード：サーバに接続する時のパスワード（もしくはパスフレーズとも）
+接続方式　：プレインテキスト
+
+ログインできればOK。
+
+3.「設定」-> 「SSH鍵生成」を選択する。
+　「生成」を押す。
+　鍵のパスワードを入力する。
+　「公開鍵の保存」「秘密鍵の保存」でそれぞれの鍵を保存する。
+
+公開鍵....サーバ側に置いておく鍵。*.pubのほう。
+秘密鍵....クライアント側に置いておいて、サーバにアクセスする時に使う鍵。拡張子がないほう。
+
+4.公開鍵を2.のTeraTermのウィンドウにドロップする。
+　そこでSCPを押す。
+　カレントに公開鍵があることを確認する。
+# ls -la
+*.pub
+
+5.場合によって対応が異なる。
+
+5.1 以下を打ってでる場合
+# ls ~/.ssh/authorized_keys
+/home/ueda/.ssh/authorized_keys
+
+公開鍵をsshフォルダにコピーする。だけ。
+# cat id_rsa.pub >> .ssh/authorized_keys
+
+5-2. 5-1でauthorized_keysがない場合
+
+以下の手順で鍵をコピーする。
+# cat id_rsa.pub >> .ssh/authorized_keys
+# chmod 644 .ssh/authorized_keys
+
+5-3. 5-1で.sshディレクトリすらない場合
+
+.sshフォルダを作成してから鍵をコピーする。
+# mkdir .ssh
+# chmod 700 .ssh
+# cat id_rsa.pub >> .ssh/authorized_keys
+# chmod 644 .ssh/authorized_keys
+
+6.TeraTermで再接続する。
+
+ユーザ名  ：サーバに接続する時のユーザ名（初回はrootユーザとか）
+パスワード：サーバに接続する時のパスワード（もしくはパスフレーズとも）
+接続方式　：RSA/DSA....鍵を使う
+秘密鍵　　：3で作成した秘密鍵を指定
+
+ログインできればOK。
 
 
