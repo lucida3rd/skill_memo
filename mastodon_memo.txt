@@ -28,6 +28,7 @@ mastodon運用時によく使うコマンドや技をまとめます。
 　◆cronの設定
 　◆python3とpython2の混在
 　◆nginx+python(uwsgi)
+　◆keybaseに登録する
 
 インスタンスの再建・閉鎖
 　◆mastodon DBのリストア
@@ -1120,6 +1121,65 @@ def application(env, start_response):
 
 8.ブラウザからアクセスして、Hello, world. が表示されればOK。
 URL： https://localhost/uwsgi/testapp/
+
+
+
+-----------------------
+＜keybaseに登録する＞
+自mastodonサーバのアカウントをkeybaseに認証させるためには、申請を出さないといけない。
+また登録には条件があって、条件に満たないサーバは登録されない？？？
+
+ガイドラインの手順で申請してもうちの場合はダメでした。
+とりま試しに申請を出すという体で。
+
+
+keybaseとは？：
+twitter、github、bitcoin、webサイトなどのSNSアカウントを公開認証し、あるユーザが同一人物であることを認証するサービスのこと。
+SNSやwebサイトに認証できるキーを置き、keybaseから認証、連携することでSNS、webサイト間のアカウントが同一人物で作成したことを
+証明できる。...ものらしい。
+メールアドレスさえあれば無料で誰でも利用できる。
+
+ガイドラインを読む。設定方法は1項。
+  https://keybase.io/docs/proof_integration_guide
+
+※タネあかしすると2項以降はmastodonとkeybaseのクライアントで自動化されてると思われる。
+　またガイドには登録サイトの制約については記載されてなさそう。
+　（逆を言うと認証されるのは向こう次第？）
+
+
+1.keybaseクライアントを導入し、keybaseユーザを作成する。
+  keybaseクライアントダウンロード：
+    https://keybase.io/download
+
+  ユーザはクライアントインストール後作成できる。
+
+2.httpieをインストールする。
+
+CentOS+python3
+# pip3 install httpie
+
+CentOS+python2
+# yum install --upgrade httpie
+
+
+3.configのバリデーションをチェックする。
+  mastodon 2.8.0以降ではバリデーション用のconfigファイルが作成されるので、それをチェックする。
+
+python3の場合：
+# /usr/local/python362/bin/http GET "https://keybase.io/_/api/1.0/validate_proof_config.json" config_url="https://[mastodonドメイン]/.well-known/example-proof-config.json"
+
+その他：
+# http GET "https://keybase.io/_/api/1.0/validate_proof_config.json" config_url="https://[mastodonドメイン]/.well-known/example-proof-config.json"
+
+これで HTTP/1.1 200 OK がでればOK。
+
+
+4.keybaseに連絡する。
+  config_url部分のURLをkeybaseの管理者 miles@keyba.se に連絡する。
+
+
+？？？？？？？
+
 
 
 
