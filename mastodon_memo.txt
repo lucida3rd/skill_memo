@@ -93,7 +93,7 @@ mastodonのホーム
 # vi /etc/systemd/system/mastodon-streaming.service
 
 ブランチを消す
-#git branch -d [ブランチ名]
+# git branch -d [ブランチ名]
 
 
 ◆rails・s3バケツ関係
@@ -294,6 +294,12 @@ mastodon-sidekiq.service
 また、ここまでの画面でWARNNINGが出てないことも確認する。
 
 
+10.キャッシュをクリアする。
+# su - mastodon
+$ cd /home/mastodon/live
+$ RAILS_ENV=production bin/tootctl cache clear
+$ exit
+
 
 補足：
 リモートを元に戻すには以下。
@@ -374,6 +380,13 @@ mastodon-sidekiq.service
 また、ここまでの画面でWARNNINGが出てないことも確認する。
 
 
+6.キャッシュをクリアする。
+# su - mastodon
+$ cd /home/mastodon/live
+$ RAILS_ENV=production bin/tootctl cache clear
+$ exit
+
+
 -----------------------
 ＜Node.jsのグローバル更新＞
 
@@ -395,12 +408,19 @@ mastodonではこの方法でならアップデートが楽になりそう。
 # npm install -g n
 
 3. Node.jsをアップデートする
-# n stable     安定版
-# n latest     最新版
-# n lts        長期サポート版(上の2つより古いけど安定している)
+# n stable          安定版
+# n latest          最新版
+# n lts             長期サポート版(上の2つより古いけど安定している)
+
+バージョンを指定する場合
+# n list
+# n [バージョン名]  指定バージョン
 
 sudoの設定をすれば効くらしい。
 この場合、グローバルアップデートにはならない？（わからん）
+
+
+# n --help    ヘルプの表示
 
 
 -----------------------
@@ -1121,6 +1141,23 @@ def application(env, start_response):
 
 8.ブラウザからアクセスして、Hello, world. が表示されればOK。
 URL： https://localhost/uwsgi/testapp/
+
+
+
+＜対処パターン＞
+ImportError: /usr/lib64/python2.7/site-packages/psycopg2/_psycopg.so: undefined symbol: PQconninfo
+が出たとき。
+
+# cd /usr/lib64
+# rm libpq.so.5
+# ln -s /usr/pgsql-[バージョン]/lib/libpq.so.5 libpq.so.5
+
+postgresql11の場合
+# ln -s /usr/pgsql-11/lib/libpq.so.5 libpq.so.5
+
+http://www.leeladharan.com/importerror-psycopg-so:-undefined-symbol:-lo-truncate64
+
+
 
 
 
