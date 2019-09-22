@@ -160,13 +160,14 @@ As an exception, we may disclose this information if we receive investigation co
 
 <h2 style="margin-top:32px">遮断ポリシー ::Blocking policy</h2>
 前述規約に違反している外部のアカウント、サーバは、mastodonのブロック機能にて遮断する場合があります。
-また、サーバの負荷軽減対策として、トラヒックが高いサーバ、もしくは個人アカウントを管理権限でブロック処置している場合があります。<br />
+サーバの負荷軽減対策として、トラヒックが高いサーバ、もしくは個人アカウントを管理権限でブロック処置している場合があります。<br />
+またスパム行為については厳しく対処します。<br />
 詳しくは以下の運用情報を参照ください。<br />
 <div style="margin-left:24px">
-The system of mastodon collects the information of the user who sent the toot for processing.
-Of the information collected here, we do not sell, trade, or otherwise pass personally identifiable information.
-Also, there is no public announcement. <br />
-As an exception, we may disclose this information if we receive investigation cooperation with Japanese law agencies, police, prosecutors, etc. (Follows the policy of the originating external server) <br />
+External accounts and servers that violate the above rules may be blocked by the block function of mastodon.
+As measures to reduce the load on the server, servers with high traffic or personal accounts may be blocked with administrative privileges. <br />
+In addition, we will deal strictly with spam. <br />
+For details, refer to the following operation information. <br />
 </div>
 
 
