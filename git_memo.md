@@ -27,13 +27,13 @@
 
 ブランチを消す
 '''
-# git branch -d [ブランチ名]
+$ git branch -d [ブランチ名]
 '''
   
 
 リモートが自分のリポジトリかを確認する。
 '''
-# git remote -v
+$ git remote -v
 origin  https://github.com/[自分のリポジトリ名].git (fetch)
 origin  https://github.com/[自分のリポジトリ名].git (push)
 '''
@@ -41,19 +41,19 @@ origin  https://github.com/[自分のリポジトリ名].git (push)
 
 ローカルリポジトリの状態を表示する(変更ありとか)
 '''
-# git status
+$ git status
 '''
   
 
 ローカルリポジトリとリモートリポジトリの変更差分を表示する
 '''
-# git diff
+$ git diff
 '''
   
 
 コミットの確認(最新から10件まで)
 '''
-# git log -n 10
+$ git log -n 10
 '''
   
 
@@ -65,64 +65,64 @@ origin  https://github.com/[自分のリポジトリ名].git (push)
 
 1.ブランチを切り替える場合
 '''
-# git branch
+$ git branch
 (現在のブランチ表示)
 
-# git branch [新しいブランチ名]
-# git checkout [ブランチ名]
+$ git branch [新しいブランチ名]
+$ git checkout [ブランチ名]
 (切り替え先のブランチ表示)
 '''
   
 
 2.ローカルリポジトリの状態確認
 '''
-# git remote -v
-# git branch
-# git status
-# git diff
+$ git remote -v
+$ git branch
+$ git status
+$ git diff
 '''
   
 
 3.ファイルの追加、変更、削除をする
 '''
 ファイルの追加
-# git add [ファイル名]
+$ git add [ファイル名]
 
 ファイルの削除
-# git rm [ファイル名]
+$ git rm [ファイル名]
 
 ファイル名変更
-# git mv [変更元ファイル名] [変更先ファイル名]
+$ git mv [変更元ファイル名] [変更先ファイル名]
 '''
 この操作をしたあとコミットしないと、当然masterには反映されない  
   
 
 4.コミットする+タグ付き
 '''
-# git tag -a [タグ] -m "(コメント)'
-# git tag
+$ git tag -a [タグ] -m "(コメント)'
+$ git tag
 '''
   
 あるいは、タグなしコミット（-aは更新したファイル全てコミット）
 '''
-# git commit -a -m "(コメント)"
+$ git commit -a -m "(コメント)"
 '''
   
 コミットに後からタグをつける場合
 '''
-# git log -n 10
-# git tag -a [タグ] -m "(コメント)" [コミット名]
+$ git log -n 10
+$ git tag -a [タグ] -m "(コメント)" [コミット名]
 '''
   
 
 5.githubへプッシュ
 '''
-# git push origin [タグ]
+$ git push origin [タグ]
 '''
   
 タグなしの場合はブランチを共有する
 '''
-# git push origin [ブランチ名]
+$ git push origin [ブランチ名]
 '''
   
 
@@ -134,30 +134,30 @@ origin  https://github.com/[自分のリポジトリ名].git (push)
 
 1.ブランチを切り替える
 '''
-# git branch
+$ git branch
 (現在のブランチ表示)
 
-# git branch [作業用ブランチ名]
-# git checkout [作業用ブランチ名]
+$ git branch [作業用ブランチ名]
+$ git checkout [作業用ブランチ名]
 (切り替え先のブランチ表示)
 '''
   
 
 2.コミットする
 '''
-# git commit -a -m "(コメント)"
+$ git commit -a -m "(コメント)"
 '''
   
 
 3.リモートの変更を取り込む
 '''
-# git fetch
-# git rebase [リモートのmasterリポジトリ名]
+$ git fetch
+$ git rebase [リモートのmasterリポジトリ名]
 '''
   
 ここで競合した場合は再編集してpushすること
 '''
-# git push origin [作業用ブランチ名]
+$ git push origin [作業用ブランチ名]
 '''
   
 
@@ -166,27 +166,27 @@ origin  https://github.com/[自分のリポジトリ名].git (push)
 
 5.masterに反映する
 '''
-# git fetch
-# git merge [リモートのmasterブランチ名]
+$ git fetch
+$ git merge [リモートのmasterブランチ名]
 
 競合があれば解消してコミットする
-# git tag -a [タグ] -m "(コメント)" [コミット名]
-# git push origin [作業用ブランチ名]
+$ git tag -a [タグ] -m "(コメント)" [コミット名]
+$ git push origin [作業用ブランチ名]
 '''
   
 作業用ブランチの変更を、masterに反映する
 '''
-# git fetch
-# git rebase origin/[作業用ブランチ名]
+$ git fetch
+$ git rebase origin/[作業用ブランチ名]
 '''
   
 
 6.ローカルを更新する
 '''
-# git checkout [masterブランチ名]
-# git pull
-# git fetch
-# git rebase [リモートのmasterリポジトリ名]
+$ git checkout [masterブランチ名]
+$ git pull
+$ git fetch
+$ git rebase [リモートのmasterリポジトリ名]
 '''
   
 
@@ -218,10 +218,10 @@ push時にgithubへのサインインが求められることがある。
 ## cloneしたリモートを元に戻す
 
 '''
-# git remote -v
-# git remote rm origin
-# git remote add origin git@github.com:[githubの自リポジトリ名]
-# git remote -v
+$ git remote -v
+$ git remote rm origin
+$ git remote add origin git@github.com:[githubの自リポジトリ名]
+$ git remote -v
 '''
   
 
