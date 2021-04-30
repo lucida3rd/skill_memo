@@ -26,12 +26,14 @@
 ## よく使うコマンド
 
 ブランチを消す
+  
 '''
 $ git branch -d [ブランチ名]
 '''
   
 
 リモートが自分のリポジトリかを確認する。
+  
 '''
 $ git remote -v
 origin  https://github.com/[自分のリポジトリ名].git (fetch)
@@ -40,18 +42,21 @@ origin  https://github.com/[自分のリポジトリ名].git (push)
   
 
 ローカルリポジトリの状態を表示する(変更ありとか)
+  
 '''
 $ git status
 '''
   
 
 ローカルリポジトリとリモートリポジトリの変更差分を表示する
+  
 '''
 $ git diff
 '''
   
 
 コミットの確認(最新から10件まで)
+  
 '''
 $ git log -n 10
 '''
@@ -64,6 +69,7 @@ $ git log -n 10
 ## githubへのpush（タグ管理）
 
 1.ブランチを切り替える場合
+  
 '''
 $ git branch
 (現在のブランチ表示)
@@ -75,6 +81,7 @@ $ git checkout [ブランチ名]
   
 
 2.ローカルリポジトリの状態確認
+  
 '''
 $ git remote -v
 $ git branch
@@ -84,6 +91,7 @@ $ git diff
   
 
 3.ファイルの追加、変更、削除をする
+  
 '''
 ファイルの追加
 $ git add [ファイル名]
@@ -98,17 +106,20 @@ $ git mv [変更元ファイル名] [変更先ファイル名]
   
 
 4.コミットする+タグ付き
+  
 '''
 $ git tag -a [タグ] -m "(コメント)'
 $ git tag
 '''
   
 あるいは、タグなしコミット（-aは更新したファイル全てコミット）
+  
 '''
 $ git commit -a -m "(コメント)"
 '''
   
 コミットに後からタグをつける場合
+  
 '''
 $ git log -n 10
 $ git tag -a [タグ] -m "(コメント)" [コミット名]
@@ -116,11 +127,13 @@ $ git tag -a [タグ] -m "(コメント)" [コミット名]
   
 
 5.githubへプッシュ
+  
 '''
 $ git push origin [タグ]
 '''
   
 タグなしの場合はブランチを共有する
+  
 '''
 $ git push origin [ブランチ名]
 '''
@@ -133,6 +146,7 @@ $ git push origin [ブランチ名]
 ## Pull Request手順
 
 1.ブランチを切り替える
+  
 '''
 $ git branch
 (現在のブランチ表示)
@@ -144,19 +158,19 @@ $ git checkout [作業用ブランチ名]
   
 
 2.コミットする
+  
 '''
 $ git commit -a -m "(コメント)"
 '''
   
 
 3.リモートの変更を取り込む
+  
 '''
 $ git fetch
 $ git rebase [リモートのmasterリポジトリ名]
-'''
   
 ここで競合した場合は再編集してpushすること
-'''
 $ git push origin [作業用ブランチ名]
 '''
   
@@ -165,6 +179,7 @@ $ git push origin [作業用ブランチ名]
   
 
 5.masterに反映する
+  
 '''
 $ git fetch
 $ git merge [リモートのmasterブランチ名]
@@ -175,6 +190,7 @@ $ git push origin [作業用ブランチ名]
 '''
   
 作業用ブランチの変更を、masterに反映する
+  
 '''
 $ git fetch
 $ git rebase origin/[作業用ブランチ名]
@@ -182,6 +198,7 @@ $ git rebase origin/[作業用ブランチ名]
   
 
 6.ローカルを更新する
+  
 '''
 $ git checkout [masterブランチ名]
 $ git pull
@@ -216,7 +233,7 @@ push時にgithubへのサインインが求められることがある。
 
 <a id="iRestoreClonedRemote"></a>
 ## cloneしたリモートを元に戻す
-
+  
 '''
 $ git remote -v
 $ git remote rm origin
