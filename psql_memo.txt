@@ -76,6 +76,9 @@ DBの削除 (*SP)
 
 -----------------------
 ＜ユーザ操作＞
+ユーザ一覧
+=> select usename from pg_user;
+
 ROLEの作成
 => create role [ユーザ名] with password '[パスワード]';
 
@@ -86,7 +89,7 @@ LOGIN権限の付与
 => alter role [ユーザ名] with login;
 
 ROLEの削除
-=> dropuser [ユーザ名]
+=> drop user [ユーザ名]
 
 
 
@@ -97,10 +100,11 @@ ROLEの削除
 => \dt
 
 
+alter table [テーブル名] add [カラム名] [型情報];
 
 
-
-
+delete from [テーブル名];
+全レコード削除
 
 
 

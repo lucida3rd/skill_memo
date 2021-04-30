@@ -197,6 +197,9 @@ deneyの削除
 
 アップデート
 # yum update
+ただしこれを行うと、フォルダの所有者が変わる場合があるので注意。とくにnginx。
+以下で所有者が変えられる。
+# chown -R mastodon:mastodon /var/lib/nginx
 
 
 ◆postgres関係
@@ -270,17 +273,20 @@ $ git merge [自ブランチ名]  ※いるのか？？？
 
 8.Mastodonのバージョンアップに必要なコマンドを入力していく。
 
-一般的なコマンド：
-$ gem install bundler
-$ bundle install --deployment --without development test
-$ yarn install
+一般的なコマンド： ※mastodon v3.0.1以降対応
+$ gem install bundler --no-document
+$ rm -rf vendor/bundle
+  ※一旦削除する場合
+$ bundle install
+$ yarn install --force
+$ curl --compressed -o- -L https://yarnpkg.com/install.sh | bash
+
+必要に応じて適用するオプション：
+$ SKIP_POST_DEPLOYMENT_MIGRATIONS=true RAILS_ENV=production bundle exec rails
+
+マージ＆コンパイル：
 $ RAILS_ENV=production bundle exec rails db:migrate
 $ RAILS_ENV=production bundle exec rails assets:precompile
-
-注意：もしprecompireでyarnのバージョンが古いと怒られたら以下を実行。（CentOSの場合）
-$ curl --compressed -o- -L https://yarnpkg.com/install.sh | bash
-　yarnのホームページ：https://yarnpkg.com/
-
 
 9.Mastodonをリスタートし、バージョンアップを完了させる。
 $ exit
@@ -319,7 +325,6 @@ $ cd live
 $ git remote -v
 $ git remote rm origin
 $ git remote add origin git@github.com:[githubの自リポジトリ名]
-
 
 
 -----------------------
@@ -633,10 +638,26 @@ $ echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bash_profile
 $ echo 'eval "$(rbenv init -)"' >> ~/.bash_profile
 $ exec $SHELL -l
 
-8.現在のバージョンを確認する。
+8.※mastodonの場合
+  mastodonローカルで使うrubyのバージョンも上げる
+$ cd /home/mastodon/live
+$ rbenv local [5項のバージョン名]
+
+  その後、mastodonのサービスを再起動する
+
+9.現在のバージョンを確認する。
 $ rbenv versions
 
 * [5項のバージョン] に切り替わっていればOK。
+
+
+補足：
+rbenv versionsでインストール済みのバージョンが表示される。
+いま使っているもの以外はSSD容量を使用することになるので以下で消すとよい。
+
+$ rbenv versions
+$ rbenv uninstall [対象バージョン名]
+$ rbenv versions
 
 
 -----------------------
@@ -1371,6 +1392,8 @@ $ cd live
 $ RAILS_ENV=production bundle exec rails db:migrate
 
 これでOK。
+
+
 
 
 -----------------------

@@ -24,6 +24,7 @@
 
 
 
+-----------------------
 
 bundle exec rails console -e production
 Account.where(domain: "<ドメイン名>").find_each do |account|
@@ -33,6 +34,169 @@ Account.where(domain: "<ドメイン名>").find_each do |account|
     account.save
 end; 0
 
+-----------------------
+
+補足３：RAILS_ENV=productionが"libcld3.soでシンボルが見つからない"でエラーになる場合
+ruby、gcc、gemが古いためbundleのライブラリシンボルがおかしくなってる可能性がある。
+よって、各々を最新にし、gemのインストールをやり直すとよい。
+
+1.最新のGCC、Rubyをインストールする。 ※別項参照のこと
+
+
+
+2.(念のため)protobufを入れなおす
+$ yum list
+  ※目でprotobuf*を探す
+
+  以下で入れなおす。
+$ sudo yum -y remove protobuf*
+$ sudo yum install protobuf*
+
+
+
+
+
+3.gemをアップデートする。
+$ cd /home/mastodon/live
+$ gem update --system
+
+4.bundleを消す
+$ rm -rf vendor/bundle
+
+5.gemにprotobufとpkg-configを入れる。
+$ gem install protobuf
+$ gem install pkg-config
+
+
+
+
+5.gem installからmastodonをいれなおす。
+
+$ gem install bundler --no-document
+$ bundle install
+$ yarn install --force
+$ curl --compressed -o- -L https://yarnpkg.com/install.sh | bash
+$ RAILS_ENV=production bundle exec rails db:migrate
+$ RAILS_ENV=production bundle exec rails assets:precompile
+
+6.mastodonサービスを再起動する。
+$ sudo systemctl restart mastodon*
+$ sudo systemctl status mastodon*
+
+
+yum install protobuf-lite-devel
+
+
+$ which bundle
+/home/mastodon/.rbenv/shims/bundle
+
+
+
+$ bundle install --redownload
+
+
+
+
+
+
+
+3.cld3を入れなおす。
+$ gem list
+  ※目でcld3を探す
+
+  以下で入れなおす。
+$ gem uninstall cld3
+$ gem install cld3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Mastodonをruby 2.6.5に更新するには、mastodonユーザーに切り替えて、
+
+rbenvで最新版がとってこられるようにruby-buildを更新して、
+cd /home/mastodon/.rbenv/plugins/ruby-build
+git pull
+
+ruby 2.6.5をインストールして、
+RUBY_CONFIGURE_OPTS=--with-jemalloc rbenv install 2.6.5
+
+Mastodonの使うrubyのバージョンを2.6.5に変更して、
+cd /home/mastodon/live
+rbenv local 2.6.5
+
+あとはMastodonを再起動すればとりあえずOK。
+
+rbenv versions ってやるとインストール済みのバージョンが表示されるけど、いま使っているもの以外は容量無駄に食うからけしておこう。
+rbenv uninstall 2.6.4
+
+あとでMastodonを更新する時に.ruby-versions変更したのがひっかかるから、そんときはgit stashで逃げちゃってね（雑）
+#mastodon
+
+
+
+
+
+
+おや？ bundler が見つかりませんとな。
+can't find gem bundler (>= 0.a) with executable bundle (Gem::GemNotFoundException)
+
+bundler は これ gem install bundler --no-ri --no-rdoc でインストールしてあるはずなのだが……？
+
+
+$ which bundle
+/home/mastodon/.rbenv/shims/bundle
+
+
+$ gem update --system
+$ gem install bundler --no-document
+
+
+
+
+-----------------------
+＜旧master追従＞　※v3.0.0以前
+
+一般的なコマンド： ※mastodon v3.0.1以降対応
+$ gem install bundler
+ｘｘｘｘｘｘ$ bundle install --deployment --without development test
+
+systemctl status postgres*
+
+
+$ bundle install
+$ yarn install
+$ curl --compressed -o- -L https://yarnpkg.com/install.sh | bash
+$ RAILS_ENV=production bundle exec rails db:migrate
+$ RAILS_ENV=production bundle exec rails assets:precompile
+
+
+9.Mastodonをリスタートし、バージョンアップを完了させる。
+$ exit
+# systemctl restart mastodon*
+# systemctl status mastodon*
+
+mastodon-web.service
+mastodon-streaming.service
+mastodon-sidekiq.service
+３つのサービスがActiveであることを確認する。
+また、ここまでの画面でWARNNINGが出てないことも確認する。
+
+
+10.キャッシュをクリアする。
+# su - mastodon
+$ cd /home/mastodon/live
+$ RAILS_ENV=production bin/tootctl cache clear
+$ exit
 
 
 
