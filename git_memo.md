@@ -224,6 +224,25 @@ $ git remote -v
 
 
 
+<a id="iLabels"></a>
+## ラベル運用
+githubのデフォルトのラベルの意味。  
+
+| Label | 説明 |
+----|---- 
+| bug | 予期しない問題または意図しない動作を示す |
+| documentation | ドキュメンテーションに改善や追加が必要であることを示す |
+| duplicate | 同様の Issue あるいはプルリクエストを示す |
+| enhancement | 新しい機能のリクエストを示す |
+| good first issue | 初回のコントリビューターに適した Issue を示す |
+| help wanted | メンテナーが Issue もしくはプルリクエストに助けを求めていることを示す |
+| invalid | Issue あるいはプルリクエストに関連性がなくなったことを示す |
+| question | Issue あるいはプルリクエストにさらなる情報が必要なことを示す |
+| wontfix | Issue あるいはプルリクエストの作業が継続されないことを示す {
+
+
+
+
 <a id="iMarkdownFormat"></a>
 ## githubマークダウン書式（確認）
 
