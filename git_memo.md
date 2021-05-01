@@ -451,7 +451,7 @@ hoge
 **＜外部参照リンク＞**  
 URLが長くて読みづらくなる場合や同じリンクを何度も使用する場合は、リンク先への参照を定義できる 
 
-[yahoo japan][yahoo]
+[yahoo japan][]
 [yahoo]: http://www.yahoo.co.jp "yahoo desu"
 
 
